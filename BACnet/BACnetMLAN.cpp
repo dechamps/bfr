@@ -14,7 +14,7 @@
 
 BACnetMLANFilterElem::BACnetMLANFilterElem( void )
     : filterNext(0), filterAccept(false)
-    , filterAddress()
+//  , filterAddress()
 {
 }
 
@@ -25,8 +25,8 @@ BACnetMLANFilterElem::BACnetMLANFilterElem( void )
 int BACnetMLANFilterElem::Test( const BACnetAddress &addr )
 {
     // if the filter has been specified but there is no match, return no decision
-    if (filterAddress.filterType && !filterAddress.Test(addr))
-        return 0;
+//  if (filterAddress.filterType && !filterAddress.Test(addr))
+//      return 0;
 
     // return accept or failure
     return (filterAccept ? 1 : -1);

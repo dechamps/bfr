@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "BFRRouter.h"
+#include "BFRMLAN.h"
 
 #include "BFRRegistration.h"
 
@@ -253,3 +254,4 @@ void BACnetRouterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
         rapp = rapp->peerNext;
     }
 }
+

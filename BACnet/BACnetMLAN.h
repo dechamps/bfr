@@ -26,7 +26,7 @@ class BACnetMLANFilterElem {
 
         BACnetMLANFilterElem( void );
 
-        BFRAddressFilter        filterAddress;      // source
+//      BFRAddressFilter        filterAddress;      // source
 
         int Test( const BACnetAddress &addr );      // -1=reject, 0=no decision, 1=accept
     };

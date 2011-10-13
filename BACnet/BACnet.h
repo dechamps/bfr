@@ -96,8 +96,8 @@ class BACnetError {
         const char *Description( void ) const;
     };
 
-#define throw_1(x)      throw new BACnetError( __FILE__, __LINE__, x, 0 )
-#define throw_2(x,y)    throw new BACnetError( __FILE__, __LINE__, x, y )
+#define throw_1(x)      do { BACnetError *err = new BACnetError( __FILE__, __LINE__, x, 0 ); throw err; } while (0)
+#define throw_2(x,y)    do { BACnetError *err = new BACnetError( __FILE__, __LINE__, x, y ); throw err; } while (0)
 
 //
 //  BACnetPDUData

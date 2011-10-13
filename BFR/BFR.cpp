@@ -1,8 +1,6 @@
 //
 //  BFR
 //
-//  $CVSHeader$
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,14 +22,18 @@
 #include "BFRRegistration.h"
 #include "BFRSwitch.h"
 #include "BFRFilter.h"
+#include "BFRVLAN.h"
+#include "BFRMLAN.h"
 #include "BFRDebug.h"
-#include "BFREcho.h"
-#include "BFRConsole.h"
-
 #include "BFREthernet.h"
 #include "BFRUDP.h"
-
-static char *_revision = "$Revision: 1.10 $";
+#include "BFRBTR.h"
+#include "BFRSimple.h"
+#include "BFRForeign.h"
+#include "BFRBBMD.h"
+#include "BFREcho.h"
+#include "BFRConsole.h"
+#include "BFRRouter.h"
 
 //
 //  BFRFactory

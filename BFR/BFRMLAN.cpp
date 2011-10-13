@@ -38,7 +38,7 @@ voidPtr BACnetMLANFilterElemFactory::StartElement( const char *name, const MinML
     valu = SubstituteArgs(attrs["address"]);
     if (!valu)
         throw_1(99008);     // specification error
-    fep->filterAddress.SetFilter( valu );
+//  fep->filterAddress.SetFilter( valu );
 
     // return the element
     return fep;

@@ -8,8 +8,6 @@
 #include "BACnet.h"
 #include "BACnetBBMD.h"
 
-#include "BFRRegistration.h"
-
 //
 //  BACnetBBMD::BACnetBBMD
 //

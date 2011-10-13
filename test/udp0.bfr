@@ -1,0 +1,4 @@
+<BFR>
+    <UDP address="$BFR_ETH0_IP" server="lan0" />
+    <Console client="lan0" prefix="0> " />
+</BFR>

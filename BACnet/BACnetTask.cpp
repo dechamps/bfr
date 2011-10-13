@@ -96,7 +96,7 @@ const char* strtimeval(const timeval& t)
     static char buff[20]
     ;
     
-    sprintf( buff, "%d.%06d", t.tv_sec, t.tv_usec );
+    sprintf( buff, "%d.%06d", (int)t.tv_sec, (int)t.tv_usec );
     return buff;
 }
 

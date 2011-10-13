@@ -11,12 +11,6 @@
 
 #include "BACnet.h"
 
-#ifdef _DEBUG
-#undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
-#define new DEBUG_NEW
-#endif
-
 //
 //	BACnetAddress
 //
@@ -157,11 +151,11 @@ bool operator ==( const BACnetAddress &addr1, const BACnetAddress &addr2 )
 				if (addr1.addrAddr[i] != addr2.addrAddr[i])
 					return false;
 			break;
-			
+
 		default:
 			throw_1(1000); // no other address types allowed
 	}
-	
+
 	// must be equal
 	return true;
 }
