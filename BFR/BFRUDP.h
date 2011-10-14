@@ -25,6 +25,8 @@ class BFRUDP : public BACnetPort {
 
     public:
         BFRUDP( void );
+        BFRUDP( const char *s );
+        BFRUDP( unsigned long host, unsigned short port );
         virtual ~BFRUDP( void );
 
         virtual void Init( void );                  // initialize
@@ -40,6 +42,7 @@ typedef BFRUDP *BFRUDPPtr;
 //
 
 class BFRUDPBroadcastListener : public BACnetPort {
+        friend class BFRUDP;
         friend class BFRUDPFactory;
 
     protected:

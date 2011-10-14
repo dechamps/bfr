@@ -30,6 +30,42 @@ BFRUDP::BFRUDP( void )
 {
 }
 
+BFRUDP::BFRUDP( const char *s )
+    : ipHost(0), ipPort(0)
+{
+    unsigned long   mask
+    ;
+
+    // decode the address
+    BACnetAddress::StringToHostPort( s, &ipHost, &mask, &ipPort );
+
+    // initialize ourselves
+    Init();
+
+    // build a local address
+    portLocalAddr.Pack( ipHost, ipPort );
+
+    // also need the broadcast address
+    portBroadcastAddr.Pack( (ipHost | ~mask), ipPort );
+
+    // may need to create a broadcast listener
+    if (mask != 0xFFFFFFFF) {
+        BFRUDPBroadcastListenerPtr  blp = new BFRUDPBroadcastListener(this)
+        ;
+
+        // set it up and start it
+        blp->ipHost = (ipHost | ~mask);
+        blp->ipPort = ipPort;
+        blp->Init();
+    }
+}
+
+BFRUDP::BFRUDP( unsigned long host, unsigned short port )
+    : ipHost(host), ipPort(port)
+{
+    Init();
+}
+
 //
 //  BFRUDP::~BFRUDP
 //
