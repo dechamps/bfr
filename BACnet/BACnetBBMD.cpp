@@ -22,6 +22,16 @@ BACnetBBMD::BACnetBBMD( void )
 //  BACnetBBMD::BACnetBBMD
 //
 
+BACnetBBMD::BACnetBBMD( unsigned long host, unsigned short port )
+    : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
+    , bbmdAddress(host, port), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
+{
+}
+
+//
+//  BACnetBBMD::BACnetBBMD
+//
+
 BACnetBBMD::BACnetBBMD( const BACnetAddress &addr )
     : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
     , bbmdAddress(addr), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
@@ -115,11 +125,12 @@ void BACnetBBMD::Indication( const BACnetPDU &pdu )
                 Request( newpdu );
             }
 
-            // send to all of the BBMD peers
-            for (i = 0; i < bbmdBDTSize; i++) {
-                newpdu.pduDestination.LocalStation( bbmdBDT[i].bdtIPAddr | (~bbmdBDT[i].bdtMask), bbmdBDT[i].bdtPort );
-                Request( newpdu );
-            }
+            // send to all of the BBMD peers (except myself)
+            for (i = 0; i < bbmdBDTSize; i++)
+                if (i != bbmdLocalIndex) {
+                    newpdu.pduDestination.LocalStation( bbmdBDT[i].bdtIPAddr | (~bbmdBDT[i].bdtMask), bbmdBDT[i].bdtPort );
+                    Request( newpdu );
+                }
 
             // done with this message as well
             delete[] msg;
@@ -208,7 +219,8 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             }
 
             // see if this should be broadcast on the local network, true iff my mask in the 
-            // BDT says direct messages forwarded messages to me
+            // BDT says this is a two-hop network, otherwise, this was sent as a directed 
+            // broadcast and other devices on this network are already seeing this message
             if ((bbmdLocalIndex >= 0) && (bbmdBDT[bbmdLocalIndex].bdtMask == 0xFFFFFFFF)) {
                 newpdu.pduSource.Null();
                 newpdu.pduDestination.LocalBroadcast();
@@ -309,18 +321,22 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 
         case bvlcOriginalUnicastNPDU:
             // pass up to the next layer, keep the source that came up from the endpoint
-            newpdu.pduSource = pdu.pduSource;
-            newpdu.pduDestination = pdu.pduDestination;
-            newpdu.SetReference( srcPtr, srcLen - 4 );
-            Response( newpdu );
+            if (serverPeer) {
+                newpdu.pduSource = pdu.pduSource;
+                newpdu.pduDestination = pdu.pduDestination;
+                newpdu.SetReference( srcPtr, srcLen - 4 );
+                Response( newpdu );
+            }
             break;
 
         case bvlcOriginalBroadcastNPDU:
-            // allow application to get a copy
-            newpdu.pduSource = pdu.pduSource;
-            newpdu.pduDestination = pdu.pduDestination;
-            newpdu.SetReference( srcPtr, srcLen - 4 );
-            Response( newpdu );
+            // allow application to get a copy, if there's one bound
+            if (serverPeer) {
+                newpdu.pduSource = pdu.pduSource;
+                newpdu.pduDestination = pdu.pduDestination;
+                newpdu.SetReference( srcPtr, srcLen - 4 );
+                Response( newpdu );
+            }
 
             // create a forwarded NPDU message
             len = 10 + pdu.pduLen - 4;
@@ -410,7 +426,7 @@ void BACnetBBMD::DeleteForeignDevice( char *spec )
 //	BACnetBBMD::AddPeer
 //
 
-void BACnetBBMD::AddPeer( char *spec )
+void BACnetBBMD::AddPeer( const char *spec )
 {
     unsigned long   ipAddr, subnetMask
     ;
@@ -431,7 +447,7 @@ void BACnetBBMD::AddPeer( char *spec )
     // address might be a directed broadcast
     bbmdBDT[bbmdBDTSize].bdtAddress = BACnetAddress( ipAddr | ~subnetMask, port );
 
-    // check to see if I should do a local broadcast
+    // see if this is my address
     if (BACnetAddress(ipAddr,port) == bbmdAddress)
         bbmdLocalIndex = bbmdBDTSize;
 
@@ -443,7 +459,7 @@ void BACnetBBMD::AddPeer( char *spec )
 //  BACnetBBMD::DeletePeer
 //
 
-void BACnetBBMD::DeletePeer( char *spec )
+void BACnetBBMD::DeletePeer( const char *spec )
 {
     unsigned long   ipAddr, subnetMask
     ;
@@ -569,3 +585,4 @@ class BACnetBBMDStarter : public BACnetTask {
             bbmdp->InstallTask();
         }
     };
+

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <math.h>
+// #include <math.h>
 
 #include "BACnetTask.h"
 
@@ -30,12 +30,17 @@ inline bool operator == ( const timeval &t1, const timeval &t2 )
 
 inline timeval& operator << (timeval &t, double val)
 {
-    double  integral
+//  double  integral
+//  ;
+//
+//  t.tv_usec = (long)(1000000 * modf(val,&integral) + 0.5);
+
+    long integral = (long)val
     ;
-    
-    t.tv_usec = (long)(1000000 * modf(val,&integral) + 0.5);
-    t.tv_sec  = (long)integral;
-    
+
+    t.tv_usec = (long)(1000000 * (val - integral) + 0.5);
+    t.tv_sec  = integral;
+
     return t;
 }
 

@@ -88,7 +88,7 @@ class BACnetError {
         const char  *errFile;
         const int   errLine;
         const int   errError;
-        char        *errParm;
+        const char  *errParm;
 
         BACnetError( const char *file, const int line, const int err, const char *parm );
         ~BACnetError( void );

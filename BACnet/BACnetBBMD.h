@@ -44,14 +44,15 @@ class BACnetBBMD : public BACnetClient, public BACnetServer, public BACnetTask {
 
     public:
         BACnetBBMD( void );
+        BACnetBBMD( unsigned long host, unsigned short port = kBACnetIPDefaultPort );
         BACnetBBMD( const BACnetAddress &addr );
         virtual ~BACnetBBMD( void );
 
         void AddForeignDevice( char *spec, int ttl );
         void DeleteForeignDevice( char *spec );
 
-        void AddPeer( char *spec );
-        void DeletePeer( char *spec );
+        void AddPeer( const char *spec );
+        void DeletePeer( const char *spec );
 
     protected:
         BACnetAddress   bbmdAddress;

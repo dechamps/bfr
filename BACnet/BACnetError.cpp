@@ -65,6 +65,9 @@ const char *BACnetError::Description( void ) const
         case 1011:
             sprintf( line, "unmatched environment variable, %s", errParm );
             return line;
+        case 1012:
+            sprintf( line, "unknown option: %s", errParm );
+            return line;
 
         case 2001:
             return "invalid address type";
@@ -163,3 +166,4 @@ const char *BACnetError::Description( void ) const
             return line;
     }
 }
+
