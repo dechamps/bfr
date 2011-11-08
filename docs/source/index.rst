@@ -8,7 +8,10 @@ This is a long line of text.
 If you would like to participate in its development, please join the
 `developers mailing list <https://lists.sourceforge.net/lists/listinfo/bfr-developers>`_
 and use the `Trac <https://sourceforge.net/apps/trac/bfr>`_ to create 
-tickets and monitor the project development.
+tickets and monitor the project development.  There is also a
+`Google+ <https://plus.google.com/101188874349659771056/posts>`_ page that you
+can add to your circles and have release notifications show up in your 
+stream.
 
 Welcome aboard!
 
