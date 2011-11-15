@@ -2,8 +2,8 @@
 //  BACnetBTR
 //
 
-#ifndef _BACnetBTR
-#define _BACnetBTR
+#ifndef _BACnetBTR_
+#define _BACnetBTR_
 
 #include "BACnet.h"
 
@@ -28,8 +28,6 @@ class BACnetBTR : public BACnetClient, public BACnetServer {
 
         void AddPeer( const BACnetAddress &ipAddr );
         void DeletePeer( const BACnetAddress &ipAddr );
-
-        void AddPeerNet( const BACnetAddress &ipAddr, int net );
     };
 
 typedef BACnetBTR *BACnetBTRPtr;

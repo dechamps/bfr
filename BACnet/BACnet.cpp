@@ -151,11 +151,11 @@ bool operator ==( const BACnetAddress &addr1, const BACnetAddress &addr2 )
 				if (addr1.addrAddr[i] != addr2.addrAddr[i])
 					return false;
 			break;
-
+			
 		default:
 			throw_1(1000); // no other address types allowed
 	}
-
+	
 	// must be equal
 	return true;
 }
@@ -573,6 +573,9 @@ const char * BACnetAddress::ToString( void ) const
 			else
 			if (addrLen == 1)
 				sprintf( dst, "%d", addrAddr[0] );
+			else
+			if ((addrLen == 6) && (addrAddr[4] == 0xBA) && (addrAddr[5] == 0xC0))
+				sprintf( dst, "%d.%d.%d.%d", addrAddr[0], addrAddr[1], addrAddr[2], addrAddr[3] );
 			else {
 				sprintf( dst, "%02X", addrAddr[0] );
 				dst += 2;

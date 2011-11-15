@@ -2,16 +2,15 @@
 //  BACnetRouter
 //
 
+#if _DEBUG_ROUTER
+#include <stdio.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "BACnet.h"
 #include "BACnetRouter.h"
-#include "BACnetMLAN.h"
-
-#ifndef DEBUG
-#define DEBUG   0
-#endif
 
 //
 //  BACnetRouterAdapter::BACnetRouterAdapter
@@ -20,6 +19,9 @@
 BACnetRouterAdapter::BACnetRouterAdapter( void )
     : adapterNet(0), adapterRouter(0), adapterPeerList(0)
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouterAdapter::BACnetRouterAdapter(?)\n");
+#endif
 }
 
 //
@@ -29,6 +31,9 @@ BACnetRouterAdapter::BACnetRouterAdapter( void )
 BACnetRouterAdapter::BACnetRouterAdapter( int net, BACnetRouterPtr router )
     : adapterNet(net), adapterRouter(router), adapterPeerList(0)
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouterAdapter::BACnetRouterAdapter(%d)\n", net);
+#endif
 }
 
 //
@@ -37,6 +42,9 @@ BACnetRouterAdapter::BACnetRouterAdapter( int net, BACnetRouterPtr router )
 
 BACnetRouterAdapter::~BACnetRouterAdapter( void )
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouterAdapter::~BACnetRouterAdapter(%d)\n", adapterNet);
+#endif
 }
 
 //
@@ -51,6 +59,10 @@ void BACnetRouterAdapter::Indication( const BACnetNPDU &npdu )
 {
     BACnetPDU   pdu
     ;
+
+#if _DEBUG_ROUTER
+    printf("BACnetRouterAdapter::Indication(%d)\n", adapterNet);
+#endif
 
     Encode( pdu, npdu );
     Request( pdu );
@@ -68,6 +80,10 @@ void BACnetRouterAdapter::Confirmation( const BACnetPDU &pdu )
     BACnetNPDU  npdu
     ;
 
+#if _DEBUG_ROUTER
+    printf("BACnetRouterAdapter::Confirmation(%d)\n", adapterNet);
+#endif
+
     Decode( npdu, pdu );
     adapterRouter->ProcessNPDU( this, npdu );
 }
@@ -79,7 +95,11 @@ void BACnetRouterAdapter::Confirmation( const BACnetPDU &pdu )
 BACnetRouter::BACnetRouter( void )
     : adapterListLen(0), routerListLen(0)
     , deviceLocalNetwork(kBACnetRouterLocalNetwork), deviceLocalAddress()
+    , dynamicRouting(false)
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouter::BACnetRouter\n");
+#endif
 }
 
 //
@@ -88,6 +108,9 @@ BACnetRouter::BACnetRouter( void )
 
 BACnetRouter::~BACnetRouter( void )
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouter::~BACnetRouter\n");
+#endif
 }
 
 //
@@ -96,6 +119,10 @@ BACnetRouter::~BACnetRouter( void )
 
 void BACnetRouter::SetLocalAddress( int net, const BACnetAddress &addr )
 {
+#if _DEBUG_ROUTER
+    printf("BACnetRouter::SetLocalAddress %d %s\n", net, addr.ToString());
+#endif
+
     deviceLocalNetwork = net;
     deviceLocalAddress = addr;
     deviceLocalAddress.addrType = remoteStationAddr;
@@ -184,6 +211,18 @@ void BACnetRouter::UnbindFromEndpoint( BACnetServerPtr endp )
 }
 
 //
+//  BACnetRouter::FilterNPDU
+//
+
+bool BACnetRouter::FilterNPDU( const BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter)
+{
+#if _DEBUG_ROUTER
+    printf( "BACnetRouter::FilterNPDU * [%d]->[%d]\n", srcAdapter->adapterNet, destAdapter->adapterNet );
+#endif
+    return true;
+}
+
+//
 //  BACnetRouter::ProcessNPDU
 //
 //  This function is called by BACnetRouterAdapter::Confirmation() when it receives
@@ -204,8 +243,8 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
     ;
     int                 i
     ;
-    
-#if DEBUG
+
+#if _DEBUG_ROUTER
     printf( "BACnetRouter::ProcessNPDU\n" );
     printf( "    - adapter->adapterNet = %d\n", adapter->adapterNet );
     printf( "    - npdu.pduSource = %s\n", npdu.pduSource.ToString() );
@@ -224,7 +263,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             if (adapterList[i]->adapterNet == npdu.npduSADR.addrNet)
                 break;
         if (i < adapterListLen) {
-#if DEBUG
+#if _DEBUG_ROUTER
             printf( "    - spoofing a directly connected network\n" );
 #endif
             return;
@@ -235,7 +274,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             if (routerList[i].routerNet == npdu.npduSADR.addrNet)
                 break;
         if ((i < routerListLen) && (!(routerList[i].routerAddr == npdu.pduSource))) {
-#if DEBUG
+#if _DEBUG_ROUTER
             printf( "    - spoofing an existing router\n" );
 #endif
             return;
@@ -244,23 +283,35 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
         // ### check to see if this source could be a router to the new network
         
         // ### check if it's OK to add an entry automatically
-        if ((i >= routerListLen) && 1) {
-#if DEBUG
-            printf( "    - add a routing table entry to network %d via %s\n"
-                , npdu.npduSADR.addrNet, npdu.pduSource.ToString()
-                );
+        if (i >= routerListLen) {
+            if (!dynamicRouting) {
+#if _DEBUG_ROUTER
+                printf( "    - dynamic routing off\n" );
 #endif
-            
-            // add a routing table entry saying it's reachable
-            BACnetRouterList	*dst
-            ;
-            
-            dst = routerList + routerListLen;
-            dst->routerNet = npdu.npduSADR.addrNet;
-            dst->routerStatus = 0;
-            dst->routerAddr = npdu.pduSource;
-            dst->routerAdapter = adapter;
-            routerListLen += 1;
+            } else {
+                if (routerListLen >= kBACnetRouterMaxRouterListLen) {
+#if _DEBUG_ROUTER
+                    printf("    - no more routing table space\n");
+#endif
+                } else {
+#if _DEBUG_ROUTER
+                    printf( "    - add a routing table entry to network %d via %s\n"
+                        , npdu.npduSADR.addrNet, npdu.pduSource.ToString()
+                        );
+                    printf( "    - new entry @%d, %d remaining\n", routerListLen, kBACnetRouterMaxRouterListLen - routerListLen - 1 );
+#endif
+                    // add a routing table entry saying it's reachable
+                    BACnetRouterList	*dst
+                    ;
+                    
+                    dst = routerList + routerListLen;
+                    dst->routerNet = npdu.npduSADR.addrNet;
+                    dst->routerStatus = 0;
+                    dst->routerAddr = npdu.pduSource;
+                    dst->routerAdapter = adapter;
+                    routerListLen += 1;
+                }
+            }
         }
     }
     
@@ -277,7 +328,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
         
         case remoteBroadcastAddr:
             if (npdu.npduDADR.addrNet == adapter->adapterNet) {
-#if DEBUG
+#if _DEBUG_ROUTER
                 printf( "    - attempting to route to a network the device is already on" );
 #endif
                 return;
@@ -288,7 +339,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             
         case remoteStationAddr:
             if (npdu.npduDADR.addrNet == adapter->adapterNet) {
-#if DEBUG
+#if _DEBUG_ROUTER
                 printf( "    - attempting to route to a network the device is already on" );
 #endif
                 return;
@@ -306,7 +357,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             
     }
     
-#if DEBUG
+#if _DEBUG_ROUTER
     printf( "    - process locally: %s\n", processLocally ? "true" : "false" );
     printf( "    - forward message: %s\n", forwardMessage ? "true" : "false" );
 #endif
@@ -371,7 +422,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             if (npdu.npduVendorID == kVendorID)
                 ProcessVendorNetMessage( adapter, npdu );
             else {
-#if DEBUG
+#if _DEBUG_ROUTER
                 printf( "    - vendor net message for vendor %d, not us\n", npdu.npduVendorID );
 #endif
             }
@@ -384,7 +435,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
 
     // if we have only one adapter, we're not much of a router
     if (adapterListLen == 1) {
-#if DEBUG
+#if _DEBUG_ROUTER
         printf( "    - not really a router\n" );
 #endif
         return;
@@ -392,13 +443,13 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
     
     // make sure it hasn't been looped around
     if (npdu.npduHopCount == 0) {
-#if DEBUG
+#if _DEBUG_ROUTER
         printf( "    - hop count as run out\n" );
 #endif
         return;
     }
 
-#if DEBUG
+#if _DEBUG_ROUTER
     printf( "    - forward ho!\n" );
 #endif
     
@@ -433,8 +484,18 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             newpdu.npduDADR.GlobalBroadcast();
             
             for (i = 0; i < adapterListLen; i++)
-                if (adapter != adapterList[i])
-                    adapterList[i]->Indication( newpdu );
+                if (adapter != adapterList[i]) {
+                    if (FilterNPDU(newpdu, adapter, adapterList[i])) {
+#if _DEBUG_ROUTER
+                        printf( "    - filter passed\n" );
+#endif
+                        adapterList[i]->Indication( newpdu );
+                    } else {
+#if _DEBUG_ROUTER
+                        printf( "    - filter failed\n" );
+#endif
+                    }
+                }
             return;
             
         case remoteBroadcastAddr:
@@ -453,8 +514,17 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
                         newpdu.pduDestination.LocalBroadcast();
                     else
                         newpdu.pduDestination.LocalStation( npdu.npduDADR.addrAddr, npdu.npduDADR.addrLen );
-                    
-                    adapterList[i]->Indication( newpdu );
+
+                    if (FilterNPDU(newpdu, adapter, adapterList[i])) {
+#if _DEBUG_ROUTER
+                        printf( "    - filter passed\n" );
+#endif
+                        adapterList[i]->Indication( newpdu );
+                    } else {
+#if _DEBUG_ROUTER
+                        printf( "    - filter failed\n" );
+#endif
+                    }
                 }
                 return;
             }
@@ -476,35 +546,67 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
                     SendRejectMessageToNetwork( adapter, npdu, 0x02 );  // router busy
                     return;
                 }
-                
+
                 // send directly to the router
                 newpdu.pduDestination = routerList[i].routerAddr;
                 newpdu.npduDADR = npdu.npduDADR;
-                
-                routerList[i].routerAdapter->Indication( newpdu );
+
+                if (FilterNPDU(newpdu, adapter, routerList[i].routerAdapter)) {
+#if _DEBUG_ROUTER
+                    printf( "    - filter passed\n" );
+#endif
+                    routerList[i].routerAdapter->Indication( newpdu );
+                } else {
+#if _DEBUG_ROUTER
+                    printf( "    - filter failed\n" );
+#endif
+                }
                 return;
             }
-            
+
             // ### check to see if this device is allowed to send messages to a unknown network
-            
-            // ### check to see if router should hunt for the network
-            if (1) {
-#if DEBUG
+
+            if (!dynamicRouting) {
+#if _DEBUG_ROUTER
+                printf( "    - dynamic routing off\n" );
+#endif
+            } else {
+#if _DEBUG_ROUTER
                 printf( "    - hunting for path to network %d\n", npdu.npduDADR.addrNet );
 #endif
-                
-                // add a routing table entry saying it's unreachable, future 
-                // messages will be rejected until a path is found
-                BACnetRouterList	*dst
-                ;
-                
-                dst = routerList + routerListLen;
-                dst->routerNet = npdu.npduDADR.addrNet;
-                dst->routerStatus = 1;          // destination unreachable
-                dst->routerAddr.Null();
-                dst->routerAdapter = 0;
-                routerListLen += 1;
-                
+
+                // if we are running out of space, purge unreachable networks
+                if (routerListLen >= kBACnetRouterMaxRouterListLen) {
+#if _DEBUG_ROUTER
+                    printf("    - purge unreachable networks\n");
+#endif
+                }
+
+                if (routerListLen < kBACnetRouterMaxRouterListLen) {
+#if _DEBUG_ROUTER
+                    printf( "    - unreachable entry @%d, %d remaining\n"
+                        , routerListLen
+                        , kBACnetRouterMaxRouterListLen - routerListLen - 1
+                        );
+#endif
+
+                    // add a routing table entry saying it's unreachable, future 
+                    // messages will be rejected until a path is found
+                    BACnetRouterList	*dst
+                    ;
+                    
+                    dst = routerList + routerListLen;
+                    dst->routerNet = npdu.npduDADR.addrNet;
+                    dst->routerStatus = 1;          // destination unreachable
+                    dst->routerAddr.Null();
+                    dst->routerAdapter = 0;
+                    routerListLen += 1;
+                } else {
+#if _DEBUG_ROUTER
+                    printf("    - no more routing table space\n");
+#endif
+                }
+
                 // build a message looking for the router
                 BACnetNPDU      huntpdu
                 ;
@@ -529,11 +631,20 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
 
                 // send it to all adapters, except the one it came from
                 for (i = 0; i < adapterListLen; i++)
-                    if (adapter != adapterList[i])
-                        adapterList[i]->Indication( huntpdu );
+                    if (adapter != adapterList[i]) {
+                        if (FilterNPDU(huntpdu, adapter, adapterList[i])) {
+#if _DEBUG_ROUTER
+                            printf( "    - filter passed\n" );
+#endif
+                            adapterList[i]->Indication( huntpdu );
+                        } else {
+#if _DEBUG_ROUTER
+                            printf( "    - filter failed\n" );
+#endif
+                        }
+                    }
             }
             return;
-            
     }
     
     //
@@ -547,12 +658,15 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
 
     // build a PDU, send it back the way it came
     if (npdu.pduDestination.addrType == localStationAddr) {
+#if _DEBUG_ROUTER
+        printf( "    - destination unreachable\n" );
+#endif
         SendRejectMessageToNetwork( adapter, npdu, 0x01 );  // destination unreachable
         return;
     }
 
-#if DEBUG
-    printf( "(router processing error)\n" );
+#if _DEBUG_ROUTER
+    printf( "    - router processing error\n" );
 #endif
 }
 
@@ -562,7 +676,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
 
 void BACnetRouter::ProcessVendorNetMessage( BACnetRouterAdapterPtr adapter, const BACnetNPDU &npdu )
 {
-#if DEBUG
+#if _DEBUG_ROUTER
     printf( "BACnetRouter::ProcessVendorNetMessage(%d)\n", npdu.npduNetMessage );
 #endif
 }
@@ -579,7 +693,7 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
     BACnetOctet     *msgPtr = npdu.pduData
     ;
 
-#if DEBUG
+#if _DEBUG_ROUTER
     printf( "BACnetRouter::ProcessNetMessage\n" );
 #endif
     
@@ -587,12 +701,12 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
     switch (npdu.npduNetMessage) {
 
         case WhoIsRouterToNetwork:
-#if DEBUG
+#if _DEBUG_ROUTER
             printf( "    - WhoIsRouterToNetwork\n" );
 #endif
-            
+
             if (adapterListLen == 1) {
-#if DEBUG
+#if _DEBUG_ROUTER
                 printf( "    - not really a router\n" );
 #endif
                 break;
@@ -611,11 +725,14 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
             if (!found) {
                 for (i = 0; i < adapterListLen; i++)
                     if (adapterList[i]->adapterNet == net) {
+#if _DEBUG_ROUTER
+                        printf( "    - found on directly connected network\n" );
+#endif
                         found = 2;
                         break;
                     }
                 if (found && (adapterList[i] == adapter)) {
-#if DEBUG
+#if _DEBUG_ROUTER
                     printf( "    - looking for the network it's on\n" );
 #endif
                     break;
@@ -626,28 +743,39 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
             if (!found) {
                 for (i = 0; i < routerListLen; i++)
                     if (routerList[i].routerNet == net) {
+#if _DEBUG_ROUTER
+                        printf( "    - found on existing path\n" );
+#endif
                         found = 2;
                         break;
                     }
                 if (found && (routerList[i].routerAdapter == adapter)) {
-#if DEBUG
-                    printf( "    - somebody else on the network is the router\n" );
+#if _DEBUG_ROUTER
+                    printf( "    - path reflected back\n" );
 #endif
                     break;
                 }
             }
 
             if (found) {
-                if (found == 1)
+                if (found == 1) {
                     BroadcastRoutingTable( adapter );                   // found without searching, send everything
-                else
+                } else {
                     BroadcastIAmRouterToNetwork( adapter, &net, 1 );    // send just the net
+                }
             } else
-            // ### check to see if it is ok to check for a path
-            if (1) {
+            if (!dynamicRouting) {
+#if _DEBUG_ROUTER
+                printf( "    - dynamic routing off\n" );
+#endif
+            } else {
                 // attempt to discover the router
                 BACnetNPDU		newpdu
                 ;
+
+#if _DEBUG_ROUTER
+                printf( "    - attempt to discover the router\n" );
+#endif
 
                 // map the source address
                 if (npdu.npduSADR.addrType == nullAddr)
@@ -672,10 +800,16 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
             break;
 
         case IAmRouterToNetwork:
-#if DEBUG
-            printf( "    - IAmRouterToNetwork\n" );
+            if (!dynamicRouting) {
+#if _DEBUG_ROUTER
+                printf( "    - IAmRouterToNetwork: dynamic routing off\n" );
 #endif
-            
+                break;
+            }
+#if _DEBUG_ROUTER
+            printf( "    - IAmRouterToNetwork:" );
+#endif
+
             // build an array of the new route list
             netListLen = msgLen / 2;
             netList = new int[netListLen];
@@ -683,36 +817,58 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
             for (i = 0; i < netListLen; i++) {
                 netList[i] = *msgPtr++;
                 netList[i] = (netList[i] << 8) + *msgPtr++;
+#if _DEBUG_ROUTER
+                printf( " %d", netList[i] );
+#endif
             }
+#if _DEBUG_ROUTER
+            printf( "\n" );
+#endif
 
             // delete existing entries
             BACnetRouterList	*src, *dst;
             src = dst = routerList;
             for (i = 0; i < routerListLen; i++) {
                 for (j = 0; j < netListLen; j++)
-                    if (src->routerNet == netList[j])
+                    if (src->routerNet == netList[j]) {
+#if _DEBUG_ROUTER
+                        printf( "    - entry @%d deleted\n", i );
+#endif
                         break;
+                    }
                 if (j >= netListLen)
-                    *dst++ = *src++;
+                    if (dst == src)
+                        dst++, src++;
+                    else
+                        *dst++ = *src++;
+            }
+
+            // update the router list length
+            if (dst != src)
+                routerListLen = (dst - routerList);
+
+            // if we are not going to have enough space for all of them, purge
+            if ((routerListLen + netListLen) >= kBACnetRouterMaxRouterListLen) {
+#if _DEBUG_ROUTER
+                printf("    - purge unreachable networks\n");
+#endif
             }
 
             // add these new entries
-            for (i = 0; i < netListLen; i++) {
-#if DEBUG
-                printf( "    - adapter connected to %d has path to %d via %s\n", adapter->adapterNet, netList[i], npdu.pduSource.ToString() );
+            for (i = 0; (i < netListLen) && (routerListLen < kBACnetRouterMaxRouterListLen); i++) {
+#if _DEBUG_ROUTER
+                printf( "    - entry @%d going to %d, %d remaining\n", routerListLen, netList[i], kBACnetRouterMaxRouterListLen - routerListLen - 1 );
 #endif
                 dst->routerNet = netList[i];
                 dst->routerStatus = 0;
                 dst->routerAddr = npdu.pduSource;
                 dst->routerAdapter = adapter;
                 dst += 1;
+                routerListLen += 1;
             }
 
-            // update the router list length
-            routerListLen = (dst - routerList);
-
             // tell everybody else our new nets
-            // ### we should build just one of these
+            // ### we should build just one of these - what happens when the list is too long for a packet?
             for (i = 0; i < adapterListLen; i++)
                 if (adapterList[i] != adapter)
                     BroadcastIAmRouterToNetwork( adapterList[i], netList, netListLen );
@@ -722,32 +878,56 @@ void BACnetRouter::ProcessNetMessage( BACnetRouterAdapterPtr adapter, const BACn
             break;
 
         case ICouldBeRouterToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - ICouldBeRouterToNetwork\n" );
+#endif
             break;
 
         case RejectMessageToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - RejectMessageToNetwork\n" );
+#endif
             // ### pass up to application somehow
             break;
 
         case RouterBusyToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - RouterBusyToNetwork\n" );
+#endif
             // ### pass up to application somehow
             break;
 
         case RouterAvailableToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - RouterAvailableToNetwork\n" );
+#endif
             // ### pass up to application somehow
             break;
 
         case InitializeRoutingTable:
+#if _DEBUG_ROUTER
+            printf( "    - InitializeRoutingTable\n" );
+#endif
             // ### pass up to application somehow
             break;
 
         case InitializeRoutingTableAck:
+#if _DEBUG_ROUTER
+            printf( "    - InitializeRoutingTableAck\n" );
+#endif
             // ### pass up to application somehow
             break;
 
         case EstablishConnectionToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - EstablishConnectionToNetwork\n" );
+#endif
             break;
 
         case DisconnectConnectionToNetwork:
+#if _DEBUG_ROUTER
+            printf( "    - DisconnectConnectionToNetwork\n" );
+#endif
             break;
 
         default:
@@ -859,6 +1039,61 @@ void BACnetRouter::BroadcastRoutingTable( BACnetRouterAdapterPtr adapter )
 }
 
 //
+//  BACnetRouter::AddRoute
+//
+
+void BACnetRouter::AddRoute( int snet, int dnet, const BACnetAddress &addr )
+{
+    BACnetRouterAdapterPtr	rap
+    ;
+
+#if _DEBUG_ROUTER
+    printf( "BACnetRouter::AddRoute %d %d %s\n", snet, dnet, addr.ToString() );
+#endif
+
+    rap = 0;
+    for (int i = 0; i < adapterListLen; i++)
+        if (adapterList[i]->adapterNet == snet) {
+            rap = adapterList[i];
+            break;
+        }
+    if (!rap) {
+#if _DEBUG_ROUTER
+        printf("    - no adapter for source network\n");
+#endif
+        throw_1(5010); // no adapter for source network
+    }
+
+    // check for a previously established route
+    for (int j = 0; j < routerListLen; j++)
+        if (routerList[j].routerNet == dnet) {
+#if _DEBUG_ROUTER
+            printf("    - already a route to this network via %s\n", routerList[j].routerAddr.ToString() );
+#endif
+            throw_2(5011, routerList[j].routerAddr.ToString() ); // already a route to this network
+        }
+
+    // if we are not going to have enough space for all of them, throw a fit
+    if (routerListLen >= kBACnetRouterMaxRouterListLen) {
+#if _DEBUG_ROUTER
+        printf("    - routing table overflow\n");
+#endif
+        throw_1(5012); // routing table overflow
+    }
+
+    // add a routing table entry saying it's reachable
+    BACnetRouterList	*dst
+    ;
+
+    dst = routerList + routerListLen;
+    dst->routerNet = dnet;
+    dst->routerStatus = 0;
+    dst->routerAddr = addr;
+    dst->routerAdapter = rap;
+    routerListLen += 1;
+}
+
+//
 //  BACnetRouter::BroadcastRoutingTables
 //
 //  This function broadcasts its routing tables to all adapters.  It is used during 
@@ -885,6 +1120,10 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
     ;
     BACnetNPDU      npdu
     ;
+
+#if _DEBUG_ROUTER
+    printf( "BACnetRouter::Indication\n" );
+#endif
 
     // make sure the adapter knows this isn't a network message
     npdu.npduNetMessage = (BACnetNetworkMessage)-1;
@@ -1033,3 +1272,4 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
             break;
     }
 }
+

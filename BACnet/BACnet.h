@@ -84,16 +84,18 @@ class BACnetError {
         BACnetError( const BACnetError &err );
         BACnetError& operator =( const BACnetError &err );
 
+        static char buff[256];
+
     public:
         const char  *errFile;
         const int   errLine;
         const int   errError;
-        const char  *errParm;
+        char        *errParm;
 
         BACnetError( const char *file, const int line, const int err, const char *parm );
         ~BACnetError( void );
 
-        const char *Description( void ) const;
+        const char *GetDescription( void ) const;
     };
 
 #define throw_1(x)      do { BACnetError *err = new BACnetError( __FILE__, __LINE__, x, 0 ); throw err; } while (0)

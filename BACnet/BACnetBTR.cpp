@@ -2,6 +2,10 @@
 //  BACnetBTR
 //
 
+#if _DEBUG_BTR
+#include <stdio.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,6 +18,9 @@
 BACnetBTR::BACnetBTR( void )
     : btrPeer(0), btrPeerLen(0)
 {
+#if _DEBUG_BTR
+    printf("BACnetBTR::BACnetBTR\n");
+#endif
 }
 
 //
@@ -22,6 +29,9 @@ BACnetBTR::BACnetBTR( void )
 
 BACnetBTR::~BACnetBTR( void )
 {
+#if _DEBUG_BTR
+    printf("BACnetBTR::~BACnetBTR\n");
+#endif
     if (btrPeer)
         delete[] btrPeer;
 }
@@ -41,19 +51,38 @@ void BACnetBTR::Indication( const BACnetPDU &pdu )
     BACnetPDU   newpdu( pdu )
     ;
 
+#if _DEBUG_BTR
+    printf("BACnetBTR::Indication\n");
+#endif
+
     switch (pdu.pduDestination.addrType) {
         case localStationAddr:
+#if _DEBUG_BTR
+            printf("    - local station\n");
+#endif
+
             // make sure the destination is one of our peers
             for (i = 0; i < btrPeerLen; i++)
                 if (pdu.pduDestination == btrPeer[i]) {
+#if _DEBUG_BTR
+                    printf("    - send to peer: %s\n", btrPeer[i].ToString());
+#endif
                     Request( pdu );
                     break;
                 }
             break;
 
         case localBroadcastAddr:
+#if _DEBUG_BTR
+            printf("    - local broadcast\n");
+#endif
+
             // send a copy to every peer
             for (i = 0; i < btrPeerLen; i++) {
+#if _DEBUG_BTR
+                printf("    - send to peer: %s\n", btrPeer[i].ToString());
+#endif
+
                 newpdu.pduDestination = btrPeer[i];
                 Request( newpdu );
             }
@@ -74,13 +103,24 @@ void BACnetBTR::Indication( const BACnetPDU &pdu )
 
 void BACnetBTR::Confirmation( const BACnetPDU &pdu )
 {
+#if _DEBUG_BTR
+    printf("BACnetBTR::Confirmation\n");
+#endif
+
     // check the version
-    if (pdu.pduData[0] != 0x01)
+    if (pdu.pduData[0] != 0x01) {
+#if _DEBUG_BTR
+        printf("    - wrong version, dropped\n");
+#endif
         return;
+    }
 
     // find a peer
     for (int i = 0; i < btrPeerLen; i++)
         if (pdu.pduSource == btrPeer[i]) {
+#if _DEBUG_BTR
+            printf("    - matched a peer, deliver upstream\n");
+#endif
             Response( pdu );
             break;
         }
@@ -94,6 +134,10 @@ void BACnetBTR::AddPeer( const BACnetAddress &ipAddr )
 {
     BACnetAddress   *newPeerList
     ;
+
+#if _DEBUG_BTR
+    printf("BACnetBTR::AddPeer %s\n", ipAddr.ToString());
+#endif
 
     newPeerList = new BACnetAddress[ btrPeerLen + 1 ];
     if (btrPeer)
@@ -115,6 +159,10 @@ void BACnetBTR::DeletePeer( const BACnetAddress &ipAddr )
     ;
     BACnetAddress   *newPeerList
     ;
+
+#if _DEBUG_BTR
+    printf("BACnetBTR::DeletePeer %s\n", ipAddr.ToString());
+#endif
 
     // find it in the list
     for (i = 0; i < btrPeerLen; i++)
@@ -142,30 +190,3 @@ void BACnetBTR::DeletePeer( const BACnetAddress &ipAddr )
     }
 }
 
-//
-//  BACnetBTR::AddPeerNet
-//
-//  This function mocks up an I-Am-Router-To-Network message as if it came from an IP 
-//  to tell the router to add this station as a path to the given network.  Note that the 
-//  BTR object must already be bound to a router for this to do anything.
-//
-
-void BACnetBTR::AddPeerNet( const BACnetAddress &addr, int net )
-{
-    // mock up an I-Am-Router-To-Network message
-    BACnetOctet
-        msg[] = { 0x01, 0x80, (unsigned char)IAmRouterToNetwork
-                , (net >> 8) & 0xFF, (net & 0xFF)
-                };
-
-    // build a packet
-    BACnetPDU   pdu
-    ;
-
-    // set the source
-    pdu.pduSource = addr;
-    pdu.SetReference( msg, 5 );
-
-    // send it upstream to the router
-    Response( pdu );
-}

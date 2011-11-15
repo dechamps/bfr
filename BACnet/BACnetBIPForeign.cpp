@@ -236,27 +236,3 @@ void BACnetBIPForeign::ProcessTask( void )
     // send it along
     Request( pdu );
 }
-
-//
-//  BACnetBIPForeignStarter
-//
-
-class BACnetBIPForeignStarter : public BACnetTask {
-    public:
-        BACnetBIPForeignPtr     fPtr;
-
-        BACnetBIPForeignStarter( BACnetBIPForeignPtr fp )
-            : BACnetTask( BACnetTask::oneShotDeleteTask ), fPtr(fp)
-        {
-            InstallTask();
-        }
-
-        virtual ~BACnetBIPForeignStarter( void )
-        {
-        }
-
-        virtual void ProcessTask( void )
-        {
-            fPtr->Register();
-        }
-    };

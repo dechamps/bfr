@@ -2,8 +2,8 @@
 //  BACnetBBMD
 //
 
-#ifndef _BACnetBBMD
-#define _BACnetBBMD
+#ifndef _BACnetBBMD_
+#define _BACnetBBMD_
 
 #include "BACnet.h"
 #include "BACnetTask.h"
@@ -40,9 +40,10 @@ const int   kBACnetBBMDMaxFDTSize = 50;
 const int   kBACnetBBMDForeignTTLExt = 5;
 
 class BACnetBBMD : public BACnetClient, public BACnetServer, public BACnetTask {
-        friend class BACnetBBMDFactory;
 
     public:
+        bool            bbmdFDSupport;
+
         BACnetBBMD( void );
         BACnetBBMD( unsigned long host, unsigned short port = kBACnetIPDefaultPort );
         BACnetBBMD( const BACnetAddress &addr );
@@ -57,7 +58,6 @@ class BACnetBBMD : public BACnetClient, public BACnetServer, public BACnetTask {
     protected:
         BACnetAddress   bbmdAddress;
         int             bbmdLocalIndex;
-        bool            bbmdFDSupport;
 
         BACnetBDTEntry  bbmdBDT[kBACnetBBMDMaxBDTSize];
         int             bbmdBDTSize;

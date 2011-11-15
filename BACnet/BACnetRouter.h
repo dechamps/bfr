@@ -2,8 +2,8 @@
 //  BACnetRouter
 //
 
-#ifndef _BACnetRouter
-#define _BACnetRouter
+#ifndef _BACnetRouter_
+#define _BACnetRouter_
 
 #include "BACnet.h"
 #include "BACnetTask.h"
@@ -23,7 +23,7 @@ typedef BACnetRouterAdapterPeer *BACnetRouterAdapterPeerPtr;
 //  BACnetRouterAdapterPeer
 //
 
-const int kBACnetRouterAdapterPeerMaxListLen = 32;         // how many remote networks
+const int kBACnetRouterAdapterPeerMaxListLen = 32;          // how many remote networks
 
 class BACnetRouterAdapterPeer {
     public:
@@ -84,6 +84,7 @@ class BACnetRouter : public BACnetServer {
         BACnetRouterList        routerList[kBACnetRouterMaxRouterListLen];
         int                     routerListLen;
 
+        virtual bool FilterNPDU( const BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter);
         void ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu );
 
         virtual void ProcessVendorNetMessage( BACnetRouterAdapterPtr adapter, const BACnetNPDU &npdu );
@@ -101,6 +102,7 @@ class BACnetRouter : public BACnetServer {
 
         int                 deviceLocalNetwork;     // net number of "local" net, -1 == not routing
         BACnetAddress       deviceLocalAddress;     // address on the network
+        bool                dynamicRouting;         // true iff routes are added dynamically
 
         void SetLocalAddress( int net, const BACnetAddress &addr );
 
@@ -108,6 +110,8 @@ class BACnetRouter : public BACnetServer {
 
         void BindToEndpoint( BACnetServerPtr endp, int net );
         void UnbindFromEndpoint( BACnetServerPtr endp );
+
+        void AddRoute( int snet, int dnet, const BACnetAddress &addr );
 
         void BroadcastRoutingTables( void );
     };

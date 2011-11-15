@@ -14,6 +14,9 @@
 BACnetError::BACnetError( const char *file, const int line, const int err, const char *parm )
     : errFile(file), errLine(line), errError(err), errParm(0)
 {
+#if _DEBUG
+    printf("BACnetError::BACnetError\n");
+#endif
     if (parm) {
         errParm = new char[strlen(parm)+1];
         strcpy( errParm, parm );
@@ -26,19 +29,21 @@ BACnetError::BACnetError( const char *file, const int line, const int err, const
 
 BACnetError::~BACnetError( void )
 {
+#if _DEBUG
+    printf("BACnetError::~BACnetError\n");
+#endif
     if (errParm)
         delete[] errParm;
 }
 
 //
-//  BACnetError::Description
+//  BACnetError::GetDescription
 //
 
-const char *BACnetError::Description( void ) const
-{
-    static char	line[256]
-    ;
+char BACnetError::buff[256];
 
+const char *BACnetError::GetDescription( void ) const
+{
     switch (errError) {
         case 1000:
             return "invalid address types for comparison";
@@ -63,17 +68,17 @@ const char *BACnetError::Description( void ) const
         case 1010:
             return "not enough arguments";
         case 1011:
-            sprintf( line, "unmatched environment variable, %s", errParm );
-            return line;
+            sprintf( buff, "unmatched environment variable, %s", errParm );
+            return buff;
         case 1012:
-            sprintf( line, "unknown option: %s", errParm );
-            return line;
+            sprintf( buff, "unknown option: %s", errParm );
+            return buff;
 
         case 2001:
             return "invalid address type";
         case 2002:
-            sprintf( line, "FDT overflow, %s", errParm );
-            return line;
+            sprintf( buff, "FDT overflow, %s", errParm );
+            return buff;
         case 2003:
             return "BBMD peer table overflow";
         case 2004:
@@ -105,6 +110,13 @@ const char *BACnetError::Description( void ) const
             return "no local network defined";
         case 5009:
             return "server required";
+        case 5010:
+            return "no adapter for source network";
+        case 5011:
+            sprintf( buff, "already a route to this network via %s", errParm );
+            return buff;
+        case 5012:
+            return "routing table overflow";
 
         case 6001:
             return "unbound VLAN node";
@@ -128,17 +140,17 @@ const char *BACnetError::Description( void ) const
             return "unrecognized keyword";
 
         case 9001:
-            sprintf( line, "registration maximum name length exceeded, %s", errParm );
-            return line;
+            sprintf( buff, "registration maximum name length exceeded, %s", errParm );
+            return buff;
         case 9002:
-            sprintf( line, "client already registered, %s", errParm );
-            return line;
+            sprintf( buff, "client already registered, %s", errParm );
+            return buff;
         case 9003:
-            sprintf( line, "server already registered, %s", errParm );
-            return line;
+            sprintf( buff, "server already registered, %s", errParm );
+            return buff;
         case 9004:
-            sprintf( line, "unmatched registration, %s", errParm );
-            return line;
+            sprintf( buff, "unmatched registration, %s", errParm );
+            return buff;
 
         case 10001:
             return "misconfigured switch port";
@@ -146,8 +158,8 @@ const char *BACnetError::Description( void ) const
         case 11001:
             return "no matching adapter or description";
         case 11002:
-            sprintf( line, "no such adapter available, %s", errParm );
-            return line;
+            sprintf( buff, "no such adapter available, %s", errParm );
+            return buff;
         case 11003:
             return "spoofing attempt";
 
@@ -156,14 +168,14 @@ const char *BACnetError::Description( void ) const
         case 12002:
             return "server required";
         case 12003:
-	       return "device required";        
-    
+	       return "device required";
+
         default:
             if (errParm)
-                sprintf( line, "unknown error %d, %s", errError, errParm );
+                sprintf( buff, "unknown error %d, %s", errError, errParm );
             else
-                sprintf( line, "unknown error %d", errError );
-            return line;
+                sprintf( buff, "unknown error %d", errError );
+            return buff;
     }
 }
 

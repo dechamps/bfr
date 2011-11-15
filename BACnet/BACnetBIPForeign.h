@@ -2,8 +2,8 @@
 //  BACnetBIPForeign
 //
 
-#ifndef _BACnetBIPForeign
-#define _BACnetBIPForeign
+#ifndef _BACnetBIPForeign_
+#define _BACnetBIPForeign_
 
 #include "BACnet.h"
 #include "BACnetTask.h"

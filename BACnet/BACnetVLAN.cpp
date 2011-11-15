@@ -2,9 +2,9 @@
 //  BACnetVLAN
 //
 
+#if _DEBUG_VLAN
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#endif
 
 #include "BACnetVLAN.h"
 
@@ -126,12 +126,12 @@ void BACnetVLAN::ProcessMessage( BACnetVLANNodePtr np, const BACnetPDU &pdu )
     BACnetVLANNodePtr   destp
     ;
 
-#if DEBUG
-    printf( "BACnetVLAN::ProcessMessage(\n" );
-    printf( "    - pduSource = %s\n",  pdu.pduSource.ToString() );
-    printf( "    - pduDestination = %s\n",  pdu.pduDestination.ToString() );
+#if _DEBUG_VLAN
+    printf( "BACnetVLAN::ProcessMessage" );
+    printf( " %s",  pdu.pduSource.ToString() );
+    printf( " --> %s\n",  pdu.pduDestination.ToString() );
 #endif
-    
+
     // look for a match
     if (pdu.pduDestination.addrType == localBroadcastAddr) {
         // give it to everyone
@@ -144,8 +144,4 @@ void BACnetVLAN::ProcessMessage( BACnetVLANNodePtr np, const BACnetPDU &pdu )
             if (destp->nodePromiscuous || ((destp != np) && (pdu.pduDestination == destp->nodeAddress)))
                 destp->Response( pdu );
     }
-    
-#if DEBUG
-    printf( ")\n" );
-#endif
 }

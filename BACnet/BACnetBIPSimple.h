@@ -2,8 +2,8 @@
 //  BACnetBIPSimple
 //
 
-#ifndef _BACnetBIPSimple
-#define _BACnetBIPSimple
+#ifndef _BACnetBIPSimple_
+#define _BACnetBIPSimple_
 
 #include "BACnet.h"
 

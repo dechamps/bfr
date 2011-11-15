@@ -2,6 +2,10 @@
 //  BACnetBBMD
 //
 
+#if _DEBUG_BBMD
+#include <stdio.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,6 +20,9 @@ BACnetBBMD::BACnetBBMD( void )
     : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
     , bbmdAddress(), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
 {
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::BACnetBBMD\n");
+#endif
 }
 
 //
@@ -26,6 +33,9 @@ BACnetBBMD::BACnetBBMD( unsigned long host, unsigned short port )
     : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
     , bbmdAddress(host, port), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
 {
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::BACnetBBMD %ld, %d\n", host, port);
+#endif
 }
 
 //
@@ -36,6 +46,9 @@ BACnetBBMD::BACnetBBMD( const BACnetAddress &addr )
     : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
     , bbmdAddress(addr), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
 {
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::BACnetBBMD %s\n", addr.ToString());
+#endif
 }
 
 //
@@ -44,6 +57,9 @@ BACnetBBMD::BACnetBBMD( const BACnetAddress &addr )
 
 BACnetBBMD::~BACnetBBMD( void )
 {
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::~BACnetBBMD\n");
+#endif
 }
 
 //
@@ -62,6 +78,10 @@ void BACnetBBMD::Indication( const BACnetPDU &pdu )
     ;
     BACnetPDU       newpdu
     ;
+
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::Indication\n");
+#endif
 
     switch (pdu.pduDestination.addrType) {
         case localStationAddr:
@@ -160,6 +180,10 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
     BACnetPDU           newpdu
     ;
 
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::Confirmation\n");
+#endif
+
     // check for one of our headers
     if ((pdu.pduLen < 4) || (*srcPtr++ != kBVLCType))
         return;
@@ -174,9 +198,16 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 
     switch (srcType) {
         case bvlcWriteBroadcastDistributionTable:
+#if _DEBUG_BBMD
+            printf("    - write broadcast distribution table\n");
+#endif
             break;
 
         case bvlcReadBroadcastDistributionTable:
+#if _DEBUG_BBMD
+            printf("    - read broadcast distribution table\n");
+#endif
+
             // build a BDT response
             newpdu.pduSource.Null();
             newpdu.pduDestination = pdu.pduSource;
@@ -200,10 +231,17 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             break;
 
         case bvlcForwardedNPDU:
+#if _DEBUG_BBMD
+            printf("    - forwarded npdu\n");
+#endif
+
             // ### check to see if this has been received from a peer BBMD
-            
-            // use result to forward up to application, if there's one bound
+
+            // forward up to application, if there's one bound
             if (serverPeer) {
+#if _DEBUG_BBMD
+                printf("    - send upstream\n");
+#endif
                 newpdu.pduSource.LocalStation( srcPtr, 6 );
                 newpdu.pduDestination = pdu.pduDestination;
                 newpdu.SetReference( srcPtr + 6, srcLen - 10 );
@@ -212,6 +250,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 
             // send it to all foreign devices
             for (i = 0; i < bbmdFDTSize; i++) {
+#if _DEBUG_BBMD
+                printf("    - send to foreign device: %s\n", bbmdFDT[i].fdAddress.ToString());
+#endif
                 newpdu.pduSource.Null();
                 newpdu.pduDestination = bbmdFDT[i].fdAddress;
                 newpdu.SetReference( pdu.pduData, pdu.pduLen );
@@ -222,17 +263,32 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             // BDT says this is a two-hop network, otherwise, this was sent as a directed 
             // broadcast and other devices on this network are already seeing this message
             if ((bbmdLocalIndex >= 0) && (bbmdBDT[bbmdLocalIndex].bdtMask == 0xFFFFFFFF)) {
+#if _DEBUG_BBMD
+                printf("    - broadcast on local network\n");
+#endif
                 newpdu.pduSource.Null();
                 newpdu.pduDestination.LocalBroadcast();
                 newpdu.SetReference( pdu.pduData, pdu.pduLen );
                 Request( newpdu );
+            } else {
+#if _DEBUG_BBMD
+                printf("    - no local broadcast, local index: %d\n", bbmdLocalIndex);
+#endif
             }
             break;
 
         case bvlcRegisterForeignDevice:
+#if _DEBUG_BBMD
+            printf("    - register foreign device\n");
+#endif
+
             // drop it if its not supported
-            if (!bbmdFDSupport)
+            if (!bbmdFDSupport) {
+#if _DEBUG_BBMD
+                printf("    - not supported\n");
+#endif
                 return;
+            }
 
             // extract the requested time-to-live
             ttl = *srcPtr++;
@@ -240,6 +296,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 
             // attempt to register
             rsltCode = RegisterForeignDevice( pdu.pduSource, ttl );
+#if _DEBUG_BBMD
+            printf("    - registration rsltCode: %d\n", rsltCode);
+#endif
 
             // send back result code
             newpdu.pduSource.Null();
@@ -255,6 +314,10 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             break;
 
         case bvlcReadForeignDeviceTable:
+#if _DEBUG_BBMD
+            printf("    - read foreign device table\n");
+#endif
+
             // send back table contents
             newpdu.pduSource.Null();
             newpdu.pduDestination = pdu.pduSource;
@@ -276,11 +339,22 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             break;
 
         case bvlcDeleteForeignDeviceTableEntry:
+#if _DEBUG_BBMD
+            printf("    - delete foreign device table entry\n");
+#endif
+
             break;
 
         case bvlcDistributeBroadcastToNetwork:
+#if _DEBUG_BBMD
+            printf("    - distribute broadcast to network\n");
+#endif
+
             // allow application to get a copy, if there's one bound
             if (serverPeer) {
+#if _DEBUG_BBMD
+                printf("    - send upstream\n");
+#endif
                 newpdu.pduSource = pdu.pduSource;
                 newpdu.pduDestination = pdu.pduDestination;
                 newpdu.SetReference( srcPtr, srcLen - 4 );
@@ -307,6 +381,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             // send it to all foreign devices (except the one it came from)
             for (i = 0; i < bbmdFDTSize; i++)
                 if (!(bbmdFDT[i].fdAddress == pdu.pduSource)) {
+#if _DEBUG_BBMD
+                    printf("    - send to foreign device: %s\n", bbmdFDT[i].fdAddress.ToString());
+#endif
                     newpdu.pduDestination = bbmdFDT[i].fdAddress;
                     Request( newpdu );
                 }
@@ -314,28 +391,52 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             // send to all of the BBMD peers (except myself)
             for (i = 0; i < bbmdBDTSize; i++)
                 if (i != bbmdLocalIndex) {
+#if _DEBUG_BBMD
+                    printf("    - send to peer: %s\n", bbmdBDT[i].bdtAddress.ToString());
+#endif
                     newpdu.pduDestination = bbmdBDT[i].bdtAddress;
                     Request( newpdu );
                 }
             break;
 
         case bvlcOriginalUnicastNPDU:
+#if _DEBUG_BBMD
+            printf("    - original unicast npdu\n");
+#endif
             // pass up to the next layer, keep the source that came up from the endpoint
             if (serverPeer) {
+#if _DEBUG_BBMD
+                printf("    - send upstream\n");
+#endif
                 newpdu.pduSource = pdu.pduSource;
                 newpdu.pduDestination = pdu.pduDestination;
                 newpdu.SetReference( srcPtr, srcLen - 4 );
                 Response( newpdu );
+            } else {
+#if _DEBUG_BBMD
+                printf("    - no upstream processing, dropped\n");
+#endif
             }
             break;
 
         case bvlcOriginalBroadcastNPDU:
-            // allow application to get a copy, if there's one bound
+#if _DEBUG_BBMD
+            printf("    - original broadcast npdu\n");
+#endif
+
+            // allow application to get a copy
             if (serverPeer) {
+#if _DEBUG_BBMD
+                printf("    - send upstream\n");
+#endif
                 newpdu.pduSource = pdu.pduSource;
                 newpdu.pduDestination = pdu.pduDestination;
                 newpdu.SetReference( srcPtr, srcLen - 4 );
                 Response( newpdu );
+            } else {
+#if _DEBUG_BBMD
+                printf("    - no upstream processing\n");
+#endif
             }
 
             // create a forwarded NPDU message
@@ -355,6 +456,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 
             // send it to all foreign devices
             for (i = 0; i < bbmdFDTSize; i++) {
+#if _DEBUG_BBMD
+                printf("    - send to foreign device: %s\n", bbmdFDT[i].fdAddress.ToString());
+#endif
                 newpdu.pduDestination = bbmdFDT[i].fdAddress;
                 Request( newpdu );
             }
@@ -362,6 +466,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
             // send to all of the BBMD peers (except myself)
             for (i = 0; i < bbmdBDTSize; i++)
                 if (i != bbmdLocalIndex) {
+#if _DEBUG_BBMD
+                    printf("    - send to peer: %s\n", bbmdBDT[i].bdtAddress.ToString());
+#endif
                     newpdu.pduDestination = bbmdBDT[i].bdtAddress;
                     Request( newpdu );
                 }
@@ -433,6 +540,10 @@ void BACnetBBMD::AddPeer( const char *spec )
     unsigned short  port
     ;
 
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::AddPeer '%s'\n", spec);
+#endif
+
     if (bbmdBDTSize >= kBACnetBBMDMaxBDTSize)
         throw_1(2003);      // peer table overflow
 
@@ -448,8 +559,12 @@ void BACnetBBMD::AddPeer( const char *spec )
     bbmdBDT[bbmdBDTSize].bdtAddress = BACnetAddress( ipAddr | ~subnetMask, port );
 
     // see if this is my address
-    if (BACnetAddress(ipAddr,port) == bbmdAddress)
+    if (BACnetAddress(ipAddr,port) == bbmdAddress) {
+#if _DEBUG_BBMD
+        printf("    - this is me\n");
+#endif
         bbmdLocalIndex = bbmdBDTSize;
+    }
 
     // update the count
     bbmdBDTSize += 1;
@@ -481,7 +596,7 @@ void BACnetBBMD::DeletePeer( const char *spec )
 
             // fix my local index
             if (bbmdLocalIndex == i)
-                bbmdLocalIndex = -1;
+                bbmdLocalIndex = -1;    // really?
             else
             if (bbmdLocalIndex > i)
                 bbmdLocalIndex -= 1;
@@ -502,25 +617,33 @@ void BACnetBBMD::ProcessTask( void )
 {
     int             i
     ;
-    bool            flag = false
-    ;
     BACnetFDTEntry  *src, *dst
     ;
 
+#if 0
+    printf("BACnetBBMD::ProcessTask\n");
+#endif
+
     src = dst = bbmdFDT;
     for (i = 0; i < bbmdFDTSize; i++)
-        if (--src->fdRemain != 0) {
-            if (!flag) {
+#if 0
+        printf("    - fdRemain [%d]: %d\n", i, src->fdRemain);
+#endif
+
+        if (--src->fdRemain > 0) {
+            if (src == dst) {
                 dst++;
                 src++;
             } else
                 *dst++ = *src++;
         } else {
+#if _DEBUG_BBMD
+            printf("BACnetBBMD::ProcessTask - expired registration %s [%d]\n", src->fdAddress.ToString(), i);
+#endif
             src += 1;
-            flag = true;
         }
 
-    if (flag)
+    if (src != dst)
         bbmdFDTSize = (dst - bbmdFDT);
 }
 
@@ -533,19 +656,34 @@ int BACnetBBMD::RegisterForeignDevice( const BACnetAddress &addr, int ttl )
     int         i
     ;
 
+#if _DEBUG_BBMD
+    printf("BACnetBBMD::RegisterForeignDevice %s %d\n", addr.ToString(), ttl);
+#endif
+
     // table overflow
-    if (bbmdFDTSize >= kBACnetBBMDMaxFDTSize)
+    if (bbmdFDTSize >= kBACnetBBMDMaxFDTSize) {
+#if _DEBUG_BBMD
+        printf("    - table overflow\n");
+#endif
         return 0x0030;
+    }
 
     // check to see if it's already in the table
     for (i = 0; i < bbmdFDTSize; i++)
         if (bbmdFDT[i].fdAddress == addr) {
+#if _DEBUG_BBMD
+            printf("    - re-registration\n");
+#endif
             bbmdFDT[i].fdTTL = ttl;
             bbmdFDT[i].fdRemain = ttl + kBACnetBBMDForeignTTLExt;
 
             // success
             return 0;
         }
+
+#if _DEBUG_BBMD
+    printf("    - new registration [%d]\n", bbmdFDTSize);
+#endif
 
     // load the table
     bbmdFDT[bbmdFDTSize].fdAddress = addr;
@@ -561,28 +699,3 @@ int BACnetBBMD::RegisterForeignDevice( const BACnetAddress &addr, int ttl )
     // success
     return 0;
 }
-
-//
-//  BACnetBBMDStarter
-//
-
-class BACnetBBMDStarter : public BACnetTask {
-    public:
-        BACnetBBMDPtr   bbmdp;
-
-        BACnetBBMDStarter( BACnetBBMDPtr bp )
-            : BACnetTask( BACnetTask::oneShotDeleteTask ), bbmdp(bp)
-        {
-            InstallTask();
-        }
-
-        virtual ~BACnetBBMDStarter( void )
-        {
-        }
-
-        virtual void ProcessTask( void )
-        {
-            bbmdp->InstallTask();
-        }
-    };
-
