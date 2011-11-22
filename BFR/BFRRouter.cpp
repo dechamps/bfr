@@ -22,56 +22,51 @@ BACnetRouterAdapterPeerFactory gBACnetRouterAdapterPeerFactory;
 
 voidPtr BACnetRouterAdapterPeerFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
 {
-    BACnetRouterAdapterPeerPtr  rapp = new BACnetRouterAdapterPeer()
+    int             status, dnet
     ;
-    int                     net
+    const char      *s, *caddr
     ;
-    const char              *s, *caddr
+    BACnetAddress   peerAddress
     ;
 
     // get the address
     if (!(caddr = SubstituteArgs(attrs["address"])))
         throw_1(5091);          // address is required
     // set the address value
-    rapp->peerAddress.Station( caddr );
+    peerAddress.Station( caddr );
+
+    // find the status, 0=OK, 1=busy
+    if ((s = SubstituteArgs(attrs["status"])) != 0)
+        status = atoi( s );
+    else
+        status = 0;
 
     // find the network
     if (!(s = SubstituteArgs(attrs["networks"])))
         throw_1(5092);          // networks is required
 
-    rapp->peerNetListLen = 0;
     while (*s) {
         while (isspace(*s)) s++;
         if (!isdigit(*s))
             throw_1(5093);      // integer required
 
         // build the network number
-        net = 0;
+        dnet = 0;
         while (isdigit(*s))
-            net = (net * 10) + (*s++ - '0');
+            dnet = (dnet * 10) + (*s++ - '0');
 
         // check it for validity
         if (net >= 65535)
             throw_1(5094);      // invalid network number
 
-        // add it to the list
-        rapp->peerNetList[rapp->peerNetListLen] = net;
-        rapp->peerNetListLen += 1;
+        // ### add the path
+        // AddRoute( int snet, dnet, peerAddress )
 
         // ready for the next one
         while (isspace(*s)) s++;
         if (*s == ',')
             s += 1;
     }
-
-    // find the status, 0=OK, 1=busy
-    if ((s = SubstituteArgs(attrs["status"])) != 0)
-        rapp->peerStatus = atoi( s );
-    else
-        rapp->peerStatus = 0;
-
-    // return the adapter peer
-    return rapp;
 }
 
 //
