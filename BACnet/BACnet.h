@@ -14,6 +14,12 @@ typedef unsigned char BACnetOctet, *BACnetOctetPtr;     // unsigned character
 const int kVendorID = 15;                               // Cornell
 
 //
+//  Tags
+//
+
+const unsigned int UnusedTag = (1 << 0);
+
+//
 //  BACnet Address
 //
 //  These address types are listed in increasing order of complexity
@@ -112,11 +118,12 @@ class BACnetError {
 //  There are two basic constructors.  The first allocates a buffer and keeps a 
 //  pointer to it.  This is used for building packets using the two Put() functions.
 //  The second is used to extract data from a buffer usin the Get() functions.  Note
-//  that you can't mix the two buffer types, one is for reading and one is for writing.
+//  that you can't mix the two buffer types, one is for reading and the other is for
+//  writing.
 //
 //  The default (parameterless) constructor makes something that can't be used until
-//  AllocData() or SetRefernce() is called.  The copy constructor makes a read-only 
-//  reference to the data which may or may not be owned.
+//  AllocData() or SetReference() is called.  The copy constructor makes a read-only 
+//  reference to the data, a shortcut for calling SetReference(pkt.pduData, pkt.pduLen).
 //
 
 struct BACnetPDUData {
@@ -163,7 +170,9 @@ struct BACnetPDU : public BACnetPDUData {
 
         int                     pduExpectingReply;          // see 6.2.2 (1 or 0)
         int                     pduNetworkPriority;         // see 6.2.2 (0, 1, 2, or 3)
-        
+        unsigned int            pduTag;                     // tagging
+
+        BACnetPDU( void );                                  // clear everything
         BACnetPDU &operator =( const BACnetPDU &arg );      // copy everything
     };
 

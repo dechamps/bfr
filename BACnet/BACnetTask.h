@@ -39,6 +39,23 @@ typedef BACnetTask *BACnetTaskPtr;
 void InstallTask( BACnetTaskPtr tp );
 void UninstallTask( BACnetTaskPtr tp );
 
+//
+//  Springboard
+//
+
+class Springboard : public BACnetTask {
+    public:
+        Springboard( BACnetTaskPtr tp );
+        virtual ~Springboard( void );
+
+    protected:
+        BACnetTaskPtr   springTask;
+
+        virtual void ProcessTask( void );
+    };
+
+typedef Springboard *SpringboardPtr;
+
 void ProcessTasks( timeval &delay );
 
 #endif

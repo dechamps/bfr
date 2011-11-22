@@ -83,6 +83,9 @@ void BACnetBBMD::Indication( const BACnetPDU &pdu )
     printf("BACnetBBMD::Indication\n");
 #endif
 
+    // foreward the tags
+    newpdu.pduTag = pdu.pduTag;
+
     switch (pdu.pduDestination.addrType) {
         case localStationAddr:
             len = 4 + pdu.pduLen;
@@ -140,17 +143,29 @@ void BACnetBBMD::Indication( const BACnetPDU &pdu )
             newpdu.SetReference( msg, len );
 
             // send it to all of the foreign devices
-            for (i = 0; i < bbmdFDTSize; i++) {
-                newpdu.pduDestination = bbmdFDT[i].fdAddress;
-                Request( newpdu );
+            if (pdu.pduTag & NoForeignDevicesTag) {
+#if _DEBUG_BBMD
+                printf("    - tag says no foreign devices\n");
+#endif
+            } else {
+                for (i = 0; i < bbmdFDTSize; i++) {
+                    newpdu.pduDestination = bbmdFDT[i].fdAddress;
+                    Request( newpdu );
+                }
             }
 
             // send to all of the BBMD peers (except myself)
-            for (i = 0; i < bbmdBDTSize; i++)
-                if (i != bbmdLocalIndex) {
-                    newpdu.pduDestination.LocalStation( bbmdBDT[i].bdtIPAddr | (~bbmdBDT[i].bdtMask), bbmdBDT[i].bdtPort );
-                    Request( newpdu );
-                }
+            if (pdu.pduTag & NoPeersTag) {
+#if _DEBUG_BBMD
+                printf("    - tag says no peers\n");
+#endif
+            } else {
+                for (i = 0; i < bbmdBDTSize; i++)
+                    if (i != bbmdLocalIndex) {
+                        newpdu.pduDestination.LocalStation( bbmdBDT[i].bdtIPAddr | (~bbmdBDT[i].bdtMask), bbmdBDT[i].bdtPort );
+                        Request( newpdu );
+                    }
+            }
 
             // done with this message as well
             delete[] msg;
@@ -234,6 +249,8 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 #if _DEBUG_BBMD
             printf("    - forwarded npdu\n");
 #endif
+            // tag the packet
+            newpdu.pduTag |= ForwardedNPDUTag;
 
             // ### check to see if this has been received from a peer BBMD
 
@@ -349,6 +366,8 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 #if _DEBUG_BBMD
             printf("    - distribute broadcast to network\n");
 #endif
+            // tag the packet
+            newpdu.pduTag |= ForeignDeviceTag;
 
             // allow application to get a copy, if there's one bound
             if (serverPeer) {
@@ -403,6 +422,9 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 #if _DEBUG_BBMD
             printf("    - original unicast npdu\n");
 #endif
+            // tag the packet
+            newpdu.pduTag |= OriginalUnicastTag;
+
             // pass up to the next layer, keep the source that came up from the endpoint
             if (serverPeer) {
 #if _DEBUG_BBMD
@@ -423,6 +445,8 @@ void BACnetBBMD::Confirmation( const BACnetPDU &pdu )
 #if _DEBUG_BBMD
             printf("    - original broadcast npdu\n");
 #endif
+            // tag the packet
+            newpdu.pduTag |= OriginalBroadcastTag;
 
             // allow application to get a copy
             if (serverPeer) {
@@ -699,3 +723,4 @@ int BACnetBBMD::RegisterForeignDevice( const BACnetAddress &addr, int ttl )
     // success
     return 0;
 }
+

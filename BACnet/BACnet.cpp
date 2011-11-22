@@ -924,6 +924,15 @@ void BACnetPDUData::Put( const BACnetOctet *buff, int len )
 }
 
 //
+//  BACnetPDU::BACnetPDU
+//
+
+BACnetPDU::BACnetPDU( void )
+    : pduExpectingReply(0), pduNetworkPriority(0), pduTag(0)
+{
+}
+
+//
 //  BACnetPDU::operator =
 //
 //  Make a copy of the contents of a PDU.
@@ -941,7 +950,10 @@ BACnetPDU& BACnetPDU::operator =( const BACnetPDU &pkt )
     // copy the other flags
     pduNetworkPriority = pkt.pduNetworkPriority;
     pduExpectingReply = pkt.pduExpectingReply;
-    
+
+    // copy the tags
+    pduTag = pkt.pduTag;
+
     // be friendly
     return *this;
 }

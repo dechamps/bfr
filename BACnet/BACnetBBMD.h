@@ -9,6 +9,28 @@
 #include "BACnetTask.h"
 
 //
+//  Array sizes
+//
+
+const int   kBACnetBBMDMaxBDTSize = 50;
+const int   kBACnetBBMDMaxFDTSize = 50;
+const int   kBACnetBBMDForeignTTLExt = 5;
+
+//
+//  Tags
+//
+
+// upstream tags
+const unsigned int OriginalUnicastTag = (1 << 1);
+const unsigned int OriginalBroadcastTag = (1 << 2);
+const unsigned int ForwardedNPDUTag = (1 << 3);
+const unsigned int ForeignDeviceTag = (1 << 4);
+
+// downstream tags
+const unsigned int NoForeignDevicesTag = (1 << 5);
+const unsigned int NoPeersTag = (1 << 6);
+
+//
 //  BACnet Broadcast Distribution Table Entry
 //
 
@@ -34,10 +56,6 @@ struct BACnetFDTEntry {
 //
 //  BACnetBBMD
 //
-
-const int   kBACnetBBMDMaxBDTSize = 50;
-const int   kBACnetBBMDMaxFDTSize = 50;
-const int   kBACnetBBMDForeignTTLExt = 5;
 
 class BACnetBBMD : public BACnetClient, public BACnetServer, public BACnetTask {
 

@@ -16,25 +16,6 @@ typedef BACnetRouter *BACnetRouterPtr;
 class BACnetRouterAdapter;
 typedef BACnetRouterAdapter *BACnetRouterAdapterPtr;
 
-class BACnetRouterAdapterPeer;
-typedef BACnetRouterAdapterPeer *BACnetRouterAdapterPeerPtr;
-
-//
-//  BACnetRouterAdapterPeer
-//
-
-const int kBACnetRouterAdapterPeerMaxListLen = 32;          // how many remote networks
-
-class BACnetRouterAdapterPeer {
-    public:
-        BACnetAddress       peerAddress;                    // LAN specific address of router (localStationAddr)
-        int                 peerNetList[kBACnetRouterAdapterPeerMaxListLen];
-        int                 peerNetListLen;
-        int                 peerStatus;                     // 0 == OK, 1 == busy
-        
-        BACnetRouterAdapterPeerPtr     peerNext;            // linked list per adapter
-    };
-
 //
 //  BACnetRouterAdapter
 //
@@ -43,8 +24,6 @@ class BACnetRouterAdapter : public BACnetClient {
     public:
         int                         adapterNet;
         BACnetRouterPtr             adapterRouter;
-
-        BACnetRouterAdapterPeerPtr  adapterPeerList;
 
         BACnetRouterAdapter( void );
         BACnetRouterAdapter( int net, BACnetRouterPtr router );
@@ -84,7 +63,7 @@ class BACnetRouter : public BACnetServer {
         BACnetRouterList        routerList[kBACnetRouterMaxRouterListLen];
         int                     routerListLen;
 
-        virtual bool FilterNPDU( const BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter);
+        virtual bool FilterNPDU( BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter );
         void ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu );
 
         virtual void ProcessVendorNetMessage( BACnetRouterAdapterPtr adapter, const BACnetNPDU &npdu );

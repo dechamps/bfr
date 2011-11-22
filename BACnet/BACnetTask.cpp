@@ -100,7 +100,7 @@ const char* strtimeval(const timeval& t)
 {
     static char buff[20]
     ;
-    
+
     sprintf( buff, "%d.%06d", (int)t.tv_sec, (int)t.tv_usec );
     return buff;
 }
@@ -200,6 +200,42 @@ void UninstallTask( BACnetTaskPtr tp )
     // remove it
     if (*th)
         *th = tp->taskNext;
+}
+
+//
+//  Springboard::Springboard
+//
+
+Springboard::Springboard( BACnetTaskPtr tp )
+    : BACnetTask( BACnetTask::oneShotDeleteTask ), springTask(tp)
+{
+#if _DEBUG_TASK
+    printf("Springboard::Springboard\n");
+#endif
+    InstallTask();
+}
+
+//
+//  Springboard::~Springboard
+//
+
+Springboard::~Springboard( void )
+{
+#if _DEBUG_TASK
+    printf("Springboard::~Springboard\n");
+#endif
+}
+
+//
+//  Springboard::ProcessTask
+//
+
+void Springboard::ProcessTask( void )
+{
+#if _DEBUG_TASK
+    printf("Springboard::ProcessTask\n");
+#endif
+    springTask->InstallTask();
 }
 
 //

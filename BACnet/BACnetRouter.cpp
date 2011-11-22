@@ -17,7 +17,7 @@
 //
 
 BACnetRouterAdapter::BACnetRouterAdapter( void )
-    : adapterNet(0), adapterRouter(0), adapterPeerList(0)
+    : adapterNet(0), adapterRouter(0)
 {
 #if _DEBUG_ROUTER
     printf("BACnetRouterAdapter::BACnetRouterAdapter(?)\n");
@@ -29,7 +29,7 @@ BACnetRouterAdapter::BACnetRouterAdapter( void )
 //
 
 BACnetRouterAdapter::BACnetRouterAdapter( int net, BACnetRouterPtr router )
-    : adapterNet(net), adapterRouter(router), adapterPeerList(0)
+    : adapterNet(net), adapterRouter(router)
 {
 #if _DEBUG_ROUTER
     printf("BACnetRouterAdapter::BACnetRouterAdapter(%d)\n", net);
@@ -214,10 +214,13 @@ void BACnetRouter::UnbindFromEndpoint( BACnetServerPtr endp )
 //  BACnetRouter::FilterNPDU
 //
 
-bool BACnetRouter::FilterNPDU( const BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter)
+bool BACnetRouter::FilterNPDU( BACnetNPDU &npdu, BACnetRouterAdapterPtr srcAdapter,  BACnetRouterAdapterPtr destAdapter )
 {
 #if _DEBUG_ROUTER
-    printf( "BACnetRouter::FilterNPDU * [%d]->[%d]\n", srcAdapter->adapterNet, destAdapter->adapterNet );
+    printf( "BACnetRouter::FilterNPDU {%02X} [%d]->[%d]\n", npdu.pduTag
+        , srcAdapter ? srcAdapter->adapterNet : 0
+        , destAdapter ? destAdapter->adapterNet : 0
+        );
 #endif
     return true;
 }
@@ -402,6 +405,7 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
             // copy the other fields
             pdu.pduExpectingReply = npdu.pduExpectingReply;
             pdu.pduNetworkPriority = npdu.pduNetworkPriority;
+            pdu.pduTag = npdu.pduTag;
             pdu.SetReference( npdu );
 
             Response( pdu );
@@ -460,7 +464,8 @@ void BACnetRouter::ProcessNPDU( BACnetRouterAdapterPtr adapter, BACnetNPDU &npdu
     // copy the basic PDU fields
     newpdu.pduExpectingReply = npdu.pduExpectingReply;
     newpdu.pduNetworkPriority = npdu.pduNetworkPriority;
-    
+    newpdu.pduTag = npdu.pduTag;
+
     // copy the other network layer fields
     newpdu.npduNetMessage = npdu.npduNetMessage;
     newpdu.npduVendorID = npdu.npduVendorID;
@@ -975,10 +980,6 @@ void BACnetRouter::BroadcastIAmRouterToNetwork( BACnetRouterAdapterPtr adapter, 
     BACnetNPDU      npdu
     ;
 
-    // clear out the flags ### shouldn't this be the default?
-    npdu.pduExpectingReply = 0;
-    npdu.pduNetworkPriority = 0;
-    
     // build a message for this adapter
     npdu.pduSource.Null();
     npdu.pduDestination.LocalBroadcast();
@@ -1125,6 +1126,9 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
     printf( "BACnetRouter::Indication\n" );
 #endif
 
+    // copy the tags
+    npdu.pduTag = pdu.pduTag;
+
     // make sure the adapter knows this isn't a network message
     npdu.npduNetMessage = (BACnetNetworkMessage)-1;
 
@@ -1139,6 +1143,7 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
     // make sure the expecting reply and priority are passed down
     npdu.pduExpectingReply = pdu.pduExpectingReply;
     npdu.pduNetworkPriority = pdu.pduNetworkPriority;
+    npdu.pduTag = pdu.pduTag;
 
     // figure out which source and destination address to use
     switch (pdu.pduDestination.addrType) {
@@ -1158,7 +1163,16 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
             npdu.pduDestination = pdu.pduDestination;
 
             // send the packet along to the local endpoint
-            adapterList[i]->Indication( npdu );
+            if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                printf( "    - filter passed\n" );
+#endif
+                adapterList[i]->Indication( npdu );
+            } else {
+#if _DEBUG_ROUTER
+                printf( "    - filter failed\n" );
+#endif
+            }
             break;
 
         case remoteStationAddr:
@@ -1176,7 +1190,16 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
                 }
 
                 // send it along
-                adapterList[i]->Indication( npdu );
+                if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                    printf( "    - filter passed\n" );
+#endif
+                    adapterList[i]->Indication( npdu );
+                } else {
+#if _DEBUG_ROUTER
+                    printf( "    - filter failed\n" );
+#endif
+                }
             } else {
                 // build a message to be routed
                 npdu.npduDADR = pdu.pduDestination;
@@ -1195,14 +1218,34 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
 
                     // send it along
                     routerList[i].routerAdapter->Indication( npdu );
+                    if (FilterNPDU(npdu, 0, routerList[i].routerAdapter)) {
+#if _DEBUG_ROUTER
+                        printf( "    - filter passed\n" );
+#endif
+                        routerList[i].routerAdapter->Indication( npdu );
+                    } else {
+#if _DEBUG_ROUTER
+                        printf( "    - filter failed\n" );
+#endif
+                    }
                 } else {
                     // build a PDU, using a broadcast address and send it to everybody
                     // in the hope that somebody will pick it up and carry it along
                     npdu.pduDestination.LocalBroadcast();
 
                     // send it to all adapters
-                    for (i = 0; i < adapterListLen; i++)
-                        adapterList[i]->Indication( npdu );
+                    for (i = 0; i < adapterListLen; i++) {
+                        if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                            printf( "    - filter passed\n" );
+#endif
+                            adapterList[i]->Indication( npdu );
+                        } else {
+#if _DEBUG_ROUTER
+                            printf( "    - filter failed\n" );
+#endif
+                        }
+                    }
                 }
             }
             break;
@@ -1217,7 +1260,16 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
                 npdu.pduDestination.LocalBroadcast();
 
                 // send it along
-                adapterList[i]->Indication( npdu );
+                if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                    printf( "    - filter passed\n" );
+#endif
+                    adapterList[i]->Indication( npdu );
+                } else {
+#if _DEBUG_ROUTER
+                    printf( "    - filter failed\n" );
+#endif
+                }
             } else {
                 // build a message to be broadcast by the real router
                 npdu.npduDADR = pdu.pduDestination;
@@ -1235,15 +1287,34 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
                     npdu.pduDestination = routerList[i].routerAddr;
 
                     // send it along
-                    routerList[i].routerAdapter->Indication( npdu );
+                    if (FilterNPDU(npdu, 0, routerList[i].routerAdapter)) {
+#if _DEBUG_ROUTER
+                        printf( "    - filter passed\n" );
+#endif
+                        routerList[i].routerAdapter->Indication( npdu );
+                    } else {
+#if _DEBUG_ROUTER
+                        printf( "    - filter failed\n" );
+#endif
+                    }
                 } else {
                     // build a PDU, using a broadcast address and send it to everybody
                     // in the hope that somebody will pick it up and carry it along
                     npdu.pduDestination.LocalBroadcast();
 
                     // send it to all adapters
-                    for (i = 0; i < adapterListLen; i++)
-                        adapterList[i]->Indication( npdu );
+                    for (i = 0; i < adapterListLen; i++) {
+                        if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                            printf( "    - filter passed\n" );
+#endif
+                            adapterList[i]->Indication( npdu );
+                        } else {
+#if _DEBUG_ROUTER
+                            printf( "    - filter failed\n" );
+#endif
+                        }
+                    }
                 }
             }
             break;
@@ -1257,8 +1328,18 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
 
             // send it to all local adapters (should only be one!)
             for (i = 0; i < adapterListLen; i++)
-                if (adapterList[i]->adapterNet == deviceLocalNetwork)
-                    adapterList[i]->Indication( npdu );
+                if (adapterList[i]->adapterNet == deviceLocalNetwork) {
+                    if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                        printf( "    - filter passed\n" );
+#endif
+                        adapterList[i]->Indication( npdu );
+                    } else {
+#if _DEBUG_ROUTER
+                        printf( "    - filter failed\n" );
+#endif
+                    }
+                }
 
             if (deviceLocalNetwork != kBACnetRouterLocalNetwork) {
                 // change it to look like it has been 'routed'
@@ -1266,8 +1347,18 @@ void BACnetRouter::Indication( const BACnetPDU &pdu )
 
                 // send it to all non-local adapters
                 for (i = 0; i < adapterListLen; i++)
-                    if (adapterList[i]->adapterNet != deviceLocalNetwork)
-                        adapterList[i]->Indication( npdu );
+                    if (adapterList[i]->adapterNet != deviceLocalNetwork) {
+                        if (FilterNPDU(npdu, 0, adapterList[i])) {
+#if _DEBUG_ROUTER
+                            printf( "    - filter passed\n" );
+#endif
+                            adapterList[i]->Indication( npdu );
+                        } else {
+#if _DEBUG_ROUTER
+                            printf( "    - filter failed\n" );
+#endif
+                        }
+                    }
             }
             break;
     }
