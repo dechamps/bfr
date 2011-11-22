@@ -138,7 +138,7 @@ int main(int argc, char* argv[], char* envp[])
     catch (BACnetError *err) {
         // more detailed error message
         fprintf( stderr, "Error %d: %s\nFile %s, line %d\n"
-            , err->errError, err->Description()
+            , err->errError, err->GetDescription()
             , err->errFile, err->errLine
             );
 
