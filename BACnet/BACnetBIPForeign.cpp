@@ -16,6 +16,9 @@ BACnetBIPForeign::BACnetBIPForeign( void )
     : BACnetTask( recurringTask )
     , foreignStatus(0), foreignTimeToLive(0)
 {
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::BACnetBIPForeign\n");
+#endif
 }
 
 //
@@ -24,6 +27,9 @@ BACnetBIPForeign::BACnetBIPForeign( void )
 
 BACnetBIPForeign::~BACnetBIPForeign( void )
 {
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::~BACnetBIPForeign\n");
+#endif
 }
 
 //
@@ -32,6 +38,10 @@ BACnetBIPForeign::~BACnetBIPForeign( void )
 
 void BACnetBIPForeign::Register( unsigned long ipAddr, unsigned short port, int ttl )
 {
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::Register %08X %d %d\n", ipAddr, port, ttl);
+#endif
+
     // set up the BBMD address
     foreignBBMDAddr.Pack( ipAddr, port );
 
@@ -48,6 +58,10 @@ void BACnetBIPForeign::Register( unsigned long ipAddr, unsigned short port, int 
 
 void BACnetBIPForeign::Register( void )
 {
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::Register\n");
+#endif
+
     // we're dead until a response comes back
     foreignStatus = 0;
 
@@ -76,11 +90,22 @@ void BACnetBIPForeign::Indication( const BACnetPDU &pdu )
     BACnetPDU       newpdu( pdu )
     ;
 
-    if (!foreignStatus)
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::Indication\n");
+#endif
+
+    if (!foreignStatus) {
+#if _DEBUG_FOREIGN
+        printf("    - not registered\n");
+#endif
         return;
+    }
 
     switch (pdu.pduDestination.addrType) {
         case localStationAddr:
+#if _DEBUG_FOREIGN
+            printf("    - local station\n");
+#endif
             len = 4 + pdu.pduLen;
             msg = msgPtr = new BACnetOctet[ len ];
 
@@ -100,6 +125,9 @@ void BACnetBIPForeign::Indication( const BACnetPDU &pdu )
             break;
 
         case localBroadcastAddr:
+#if _DEBUG_FOREIGN
+            printf("    - local broadcast\n");
+#endif
             len = 4 + pdu.pduLen;
             msg = msgPtr = new BACnetOctet[ len ];
 
@@ -142,9 +170,17 @@ void BACnetBIPForeign::Confirmation( const BACnetPDU &pdu )
     BACnetPDU       newpdu( pdu )
     ;
 
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::Confirmation\n");
+#endif
+
     // check for one of our headers
-    if ((pdu.pduLen < 4) || (*msgPtr++ != kBVLCType))
+    if ((pdu.pduLen < 4) || (*msgPtr++ != kBVLCType)) {
+#if _DEBUG_FOREIGN
+        printf("    - not a BVLL message\n");
+#endif
         return;
+    }
 
     msgType = *msgPtr++;
     msgLen = *msgPtr++;
@@ -156,20 +192,32 @@ void BACnetBIPForeign::Confirmation( const BACnetPDU &pdu )
 
     switch (msgType) {
         case bvlcResult:
+#if _DEBUG_FOREIGN
+            printf("    - registration result\n");
+#endif
             rsltCode = *msgPtr++;
             rsltCode = (rsltCode << 8) + *msgPtr++;
 
             // check the result code
-            if (rsltCode == 0)
+            if (rsltCode == 0) {
+#if _DEBUG_FOREIGN
+                printf("    - success\n");
+#endif
                 foreignStatus = 1;
-            else
+            } else
             if (rsltCode == 0x0030) {
+#if _DEBUG_FOREIGN
+                printf("    - failed: %d\n", rsltCode);
+#endif
                 foreignStatus = 0;
                 UninstallTask();
             }
             break;
 
         case bvlcForwardedNPDU:
+#if _DEBUG_FOREIGN
+            printf("    - forwared npdu\n");
+#endif
             // make sure there's enough data
             if (msgLen < 10)
                 return;
@@ -188,6 +236,9 @@ void BACnetBIPForeign::Confirmation( const BACnetPDU &pdu )
 
         case bvlcOriginalUnicastNPDU:
         case bvlcOriginalBroadcastNPDU:
+#if _DEBUG_FOREIGN
+            printf("    - original unicast/broadcast\n");
+#endif
             // save the data portion
 // ###      pdu.bvlcData = pdu.pduData;
             newpdu.SetReference( msgPtr, msgLen - 4 );
@@ -221,6 +272,10 @@ void BACnetBIPForeign::ProcessTask( void )
     ;
     BACnetPDU       pdu
     ;
+
+#if _DEBUG_FOREIGN
+    printf("BACnetBIPForeign::ProcessTask\n");
+#endif
 
     *msgPtr++ = kBVLCType;                          // type
     *msgPtr++ = bvlcRegisterForeignDevice;          // register foreign device
