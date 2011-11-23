@@ -54,8 +54,7 @@ const int kBACnetRouterLocalNetwork = -1;       // local network, pass to BindTo
 
 class BACnetRouter : public BACnetServer {
         friend class BACnetRouterAdapter;
-        friend class BACnetMLAN;
-        friend class BACnetRouterFactory;
+        friend class BFRRouterFactory;
 
     protected:
         BACnetRouterAdapterPtr  adapterList[kBACnetRouterMaxAdapters];

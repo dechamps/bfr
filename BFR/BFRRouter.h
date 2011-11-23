@@ -8,51 +8,65 @@
 #include "BFRParser.h"
 #include "BACnetRouter.h"
 
+const int kBFRRouterAdapterMaxPeerNetListLen = 50;
+
 //
-//  BACnetRouterAdapterPeerFactory
+//  BFRRouterAdapterPeer
 //
 
-class BACnetRouterAdapterPeerFactory : public BFRFactory {
+struct BFRRouterAdapterPeer {
+    int             peerNetList[kBFRRouterAdapterMaxPeerNetListLen];
+    int             peerNetListLen;
+    BACnetAddress   peerAddress;
+    };
+
+typedef BFRRouterAdapterPeer *BFRRouterAdapterPeerPtr;
+
+//
+//  BFRRouterAdapterPeerFactory
+//
+
+class BFRRouterAdapterPeerFactory : public BFRFactory {
     public:
         virtual voidPtr StartElement( const char *name, const MinML::AttributeList& attrs );
     };
 
-typedef BACnetRouterAdapterPeerFactory *BACnetRouterAdapterPeerFactoryPtr;
+typedef BFRRouterAdapterPeerFactory *BFRRouterAdapterPeerFactoryPtr;
 
-extern BACnetRouterAdapterPeerFactory gBACnetRouterAdapterPeerFactory;
+extern BFRRouterAdapterPeerFactory gBFRRouterAdapterPeerFactory;
 
 //
-//  BACnetRouterAdapterFactory
+//  BFRRouterAdapterFactory
 //
 
-class BACnetRouterAdapterFactory : public BFRFactory {
+class BFRRouterAdapterFactory : public BFRFactory {
     public:
-        BACnetRouterAdapterFactory( void );
-        virtual ~BACnetRouterAdapterFactory( void );
-
-        virtual voidPtr StartElement( const char *name, const MinML::AttributeList& attrs );
-        virtual void ChildElement( voidPtr ep, int id, voidPtr cp );
-    };
-
-typedef BACnetRouterAdapterFactory *BACnetRouterAdapterFactoryPtr;
-
-extern BACnetRouterAdapterFactory gBACnetRouterAdapterFactory;
-
-//
-//  BACnetRouterFactory
-//
-
-class BACnetRouterFactory : public BFRFactory {
-    public:
-        BACnetRouterFactory( void );
-        virtual ~BACnetRouterFactory( void );
+        BFRRouterAdapterFactory( void );
+        virtual ~BFRRouterAdapterFactory( void );
 
         virtual voidPtr StartElement( const char *name, const MinML::AttributeList& attrs );
         virtual void ChildElement( voidPtr ep, int id, voidPtr cp );
     };
 
-typedef BACnetRouterFactory *BACnetRouterFactoryPtr;
+typedef BFRRouterAdapterFactory *BFRRouterAdapterFactoryPtr;
 
-extern BACnetRouterFactory gBACnetRouterFactory;
+extern BFRRouterAdapterFactory gBFRRouterAdapterFactory;
+
+//
+//  BFRRouterFactory
+//
+
+class BFRRouterFactory : public BFRFactory {
+    public:
+        BFRRouterFactory( void );
+        virtual ~BFRRouterFactory( void );
+
+        virtual voidPtr StartElement( const char *name, const MinML::AttributeList& attrs );
+        virtual void ChildElement( voidPtr ep, int id, voidPtr cp );
+    };
+
+typedef BFRRouterFactory *BFRRouterFactoryPtr;
+
+extern BFRRouterFactory gBFRRouterFactory;
 
 #endif

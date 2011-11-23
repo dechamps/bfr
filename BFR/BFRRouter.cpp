@@ -11,29 +11,29 @@
 #include "BFRRegistration.h"
 
 //
-//  BACnetRouterAdapterPeerFactory::BACnetRouterAdapterPeerFactory
+//  BFRRouterAdapterPeerFactory::BFRRouterAdapterPeerFactory
 //
 
-BACnetRouterAdapterPeerFactory gBACnetRouterAdapterPeerFactory;
+BFRRouterAdapterPeerFactory gBFRRouterAdapterPeerFactory;
 
 //
-//  BACnetRouterAdapterPeerFactory::StartElement
+//  BFRRouterAdapterPeerFactory::StartElement
 //
 
-voidPtr BACnetRouterAdapterPeerFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
+voidPtr BFRRouterAdapterPeerFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
 {
+    BFRRouterAdapterPeerPtr app = new BFRRouterAdapterPeer()
+    ;
     int             status, dnet
     ;
     const char      *s, *caddr
-    ;
-    BACnetAddress   peerAddress
     ;
 
     // get the address
     if (!(caddr = SubstituteArgs(attrs["address"])))
         throw_1(5091);          // address is required
     // set the address value
-    peerAddress.Station( caddr );
+    app->peerAddress.Station( caddr );
 
     // find the status, 0=OK, 1=busy
     if ((s = SubstituteArgs(attrs["status"])) != 0)
@@ -56,11 +56,13 @@ voidPtr BACnetRouterAdapterPeerFactory::StartElement( const char *name, const Mi
             dnet = (dnet * 10) + (*s++ - '0');
 
         // check it for validity
-        if (net >= 65535)
+        if (dnet >= 65535)
             throw_1(5094);      // invalid network number
 
-        // ### add the path
-        // AddRoute( int snet, dnet, peerAddress )
+        // add the path to the list
+        if (app->peerNetListLen >= kBFRRouterAdapterMaxPeerNetListLen)
+            throw_1(5095);      // too many peer networks
+        app->peerNetList[app->peerNetListLen++] = dnet;
 
         // ready for the next one
         while (isspace(*s)) s++;
@@ -70,34 +72,34 @@ voidPtr BACnetRouterAdapterPeerFactory::StartElement( const char *name, const Mi
 }
 
 //
-//  BACnetRouterAdapterFactory
+//  BFRRouterAdapterFactory
 //
 
-BFRFactoryChild gBACnetRouterAdapterFactoryChildren[] =
-    { { "Peer", &gBACnetRouterAdapterPeerFactory }
+BFRFactoryChild gBFRRouterAdapterFactoryChildren[] =
+    { { "Peer", &gBFRRouterAdapterPeerFactory }
     , { 0, 0 }
     };
 
-BACnetRouterAdapterFactory gBACnetRouterAdapterFactory;
+BFRRouterAdapterFactory gBFRRouterAdapterFactory;
 
-BACnetRouterAdapterFactory::BACnetRouterAdapterFactory( void )
-    : BFRFactory(gBACnetRouterAdapterFactoryChildren)
+BFRRouterAdapterFactory::BFRRouterAdapterFactory( void )
+    : BFRFactory(gBFRRouterAdapterFactoryChildren)
 {
 }
 
 //
-//  BACnetRouterAdapterFactory::~BACnetRouterAdapterFactory
+//  BFRRouterAdapterFactory::~BFRRouterAdapterFactory
 //
 
-BACnetRouterAdapterFactory::~BACnetRouterAdapterFactory( void )
+BFRRouterAdapterFactory::~BFRRouterAdapterFactory( void )
 {
 }
 
 //
-//  BACnetRouterAdapterFactory::StartElement
+//  BFRRouterAdapterFactory::StartElement
 //
 
-voidPtr BACnetRouterAdapterFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
+voidPtr BFRRouterAdapterFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
 {
     BACnetRouterAdapterPtr  rap = new BACnetRouterAdapter()
     ;
@@ -120,55 +122,53 @@ voidPtr BACnetRouterAdapterFactory::StartElement( const char *name, const MinML:
 }
 
 //
-//  BACnetRouterAdapterFactory::ChildElement
+//  BFRRouterAdapterFactory::ChildElement
 //
 
-void BACnetRouterAdapterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
+void BFRRouterAdapterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
 {
-    BACnetRouterAdapterPtr      rap = (BACnetRouterAdapterPtr)ep
+    BACnetRouterAdapterPtr  rap = (BACnetRouterAdapterPtr)ep
     ;
-    BACnetRouterAdapterPeerPtr  rapp = (BACnetRouterAdapterPeerPtr)cp
+    BFRRouterAdapterPeerPtr rapp = (BFRRouterAdapterPeerPtr)cp
     ;
 
-    // link them together
-    rapp->peerNext = rap->adapterPeerList;
-    rap->adapterPeerList = rapp;
+    // ### tell the router of the adapter (also its parent) of the peers
 }
 
 //
-//  BACnetRouterFactory
+//  BFRRouterFactory
 //
 
-BFRFactoryChild gBACnetRouterFactoryChildren[] =
-    { { "Adapter", &gBACnetRouterAdapterFactory }
+BFRFactoryChild gBFRRouterFactoryChildren[] =
+    { { "Adapter", &gBFRRouterAdapterFactory }
     , { "MAdapter", &gBACnetMLANAdapterFactory }
     , { 0, 0 }
     };
 
-BACnetRouterFactory gBACnetRouterFactory;
+BFRRouterFactory gBFRRouterFactory;
 
 //
-//  BACnetRouterFactory::BACnetRouterFactory
+//  BFRRouterFactory::BFRRouterFactory
 //
 
-BACnetRouterFactory::BACnetRouterFactory( void )
-    : BFRFactory(gBACnetRouterFactoryChildren)
+BFRRouterFactory::BFRRouterFactory( void )
+    : BFRFactory(gBFRRouterFactoryChildren)
 {
 }
 
 //
-//  BACnetRouterFactory::~BACnetRouterFactory
+//  BFRRouterFactory::~BFRRouterFactory
 //
 
-BACnetRouterFactory::~BACnetRouterFactory( void )
+BFRRouterFactory::~BFRRouterFactory( void )
 {
 }
 
 //
-//  BACnetRouterFactory::StartElement
+//  BFRRouterFactory::StartElement
 //
 
-voidPtr BACnetRouterFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
+voidPtr BFRRouterFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
 {
     BACnetRouterPtr     rp = new BACnetRouter()
     ;
@@ -211,25 +211,26 @@ voidPtr BACnetRouterFactory::StartElement( const char *name, const MinML::Attrib
 }
 
 //
-//	BACnetRouterFactory::ChildElement
+//	BFRRouterFactory::ChildElement
 //
 
-void BACnetRouterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
+void BFRRouterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
 {
-    int                         i
+    int                     i
     ;
-    BACnetRouterPtr             rp = (BACnetRouterPtr)ep
+    BACnetRouterPtr         rp = (BACnetRouterPtr)ep
     ;
-    BACnetRouterAdapterPtr      rap = (BACnetRouterAdapterPtr)cp
+    BACnetRouterAdapterPtr  rap = (BACnetRouterAdapterPtr)cp
     ;
-    BACnetRouterAdapterPeerPtr  rapp = (BACnetRouterAdapterPeerPtr)cp
+    BFRRouterAdapterPeerPtr rapp = (BFRRouterAdapterPeerPtr)cp
     ;
-    BACnetRouterList            *dst
+    BACnetRouterList        *dst
     ;
 
     // children are adapters
     rp->AddAdapter( rap );
 
+#if 0
     // add the peers
     rapp = rap->adapterPeerList;
     while (rapp) {
@@ -248,5 +249,6 @@ void BACnetRouterFactory::ChildElement( voidPtr ep, int id, voidPtr cp )
         // next peer element
         rapp = rapp->peerNext;
     }
+#endif
 }
 

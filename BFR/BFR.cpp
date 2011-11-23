@@ -8,11 +8,13 @@
 #include <string.h>
 
 #include "BACnet.h"
+#include "BACnetDebug.h"
 #include "BACnetVLAN.h"
 #include "BACnetMLAN.h"
 #include "BACnetAddressPool.h"
 #include "BACnetTask.h"
 #include "BACnetBTR.h"
+#include "BACnetUDP.h"
 #include "BACnetBIPSimple.h"
 #include "BACnetBIPForeign.h"
 #include "BACnetBBMD.h"
@@ -20,11 +22,12 @@
 
 #include "BFRParser.h"
 #include "BFRRegistration.h"
+#include "BFRDebug.h"
+#include "BFRConsole.h"
 #include "BFRSwitch.h"
 #include "BFRFilter.h"
 #include "BFRVLAN.h"
 #include "BFRMLAN.h"
-#include "BFRDebug.h"
 #include "BFREthernet.h"
 #include "BFRUDP.h"
 #include "BFRBTR.h"
@@ -32,7 +35,6 @@
 #include "BFRForeign.h"
 #include "BFRBBMD.h"
 #include "BFREcho.h"
-#include "BFRConsole.h"
 #include "BFRRouter.h"
 
 //
@@ -53,7 +55,7 @@ BFRFactoryChild gBFRMasterFactoryChildren[] =
     , { "BBMD", &gBACnetBBMDFactory }
     , { "Echo", &gBFREchoFactory }
     , { "Console", &gBFRConsoleFactory }
-    , { "Router", &gBACnetRouterFactory }
+    , { "Router", &gBFRRouterFactory }
     , { 0, 0 }
     };
 

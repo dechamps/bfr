@@ -1,5 +1,5 @@
 //
-//  BFR
+//  UDP Sample
 //
 
 #include <stdio.h>
@@ -7,9 +7,8 @@
 #include "BACnet.h"
 #include "BACnetTask.h"
 #include "BACnetPort.h"
-
-#include "BFRUDP.h"
-#include "BFRConsole.h"
+#include "BACnetUDP.h"
+#include "BACnetConsole.h"
 
 //
 
@@ -17,19 +16,19 @@ bool gBFRRunning;
 
 int main(int argc, char* argv[], char* envp[])
 {
-    struct timeval  delta
+    struct timeval      delta
     ;
-    BFRUDPPtr       udpp
+    BACnetUDPPtr        udpp
     ;
-    BFRConsolePtr   cp
+    BACnetConsolePtr    cp
     ;
 
     try {
         // network port
-        udpp = new BFRUDP("128.253.109.40/24");
+        udpp = new BACnetUDP("128.253.109.40/24");
 
         // debugger
-        cp = new BFRConsole();
+        cp = new BACnetConsole();
 
         // bind them together
         Bind(cp, udpp);
@@ -46,7 +45,7 @@ int main(int argc, char* argv[], char* envp[])
     catch (BACnetError *err) {
         // more detailed error message
         fprintf( stderr, "Error %d: %s\nFile %s, line %d\n"
-            , err->errError, err->Description()
+            , err->errError, err->GetDescription()
             , err->errFile, err->errLine
             );
 
