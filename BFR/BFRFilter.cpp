@@ -922,8 +922,10 @@ void BFRFilterSet::Analyze( const BACnetPDU &pdu )
     }
     
     // all done for network layer messages
-    if (netLayerMessage)
+    if (netLayerMessage) {
+        filterNPCIFn = *pduData;
         return;
+    }
 
     // skip the hop count
     if (dnetPresent)
