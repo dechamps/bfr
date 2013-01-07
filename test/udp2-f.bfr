@@ -1,0 +1,14 @@
+<BFR>
+    <UDP address="$BFR_ETH0_IP" server="lan0" />
+    <Debug client="lan0" server="x" prefix="x> " />
+    <BIP client="x" server="ip0" />
+    <Debug client="ip0" server="y" prefix="y> " />
+    <Filter client="y" server="f0">
+        <Upstream>
+            <Accept function="who-is-router-to-network" />
+            <Accept function="i-am-router-to-network" />
+            <Reject />
+        </Upstream>
+    </Filter>
+    <Debug client="f0" prefix="z> " />
+</BFR>

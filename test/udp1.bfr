@@ -1,0 +1,12 @@
+<BFR>
+    <UDP address="$BFR_ETH0_IP" server="udp1" />
+    <BIP client="udp1" server="bip1" />
+
+    <UDP address="$BFR_ETH1_IP" server="udp2" />
+    <BIP client="udp2" server="bip2" />
+
+    <Router>
+        <Adapter client="bip1" net="1" />
+        <Adapter client="bip2" net="2" />
+    </Router>
+</BFR>
