@@ -77,7 +77,7 @@ void BACnetDebug::Indication( const BACnetPDU &pdu )
 void BACnetDebug::Confirmation( const BACnetPDU &pdu )
 {
     if (debugNewLine)
-        printf( "\n\n", debugPrefix );
+        printf( "\n\n" );
 
     if (debugPrefix)
         printf( "%s ", debugPrefix );
