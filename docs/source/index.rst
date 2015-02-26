@@ -18,27 +18,67 @@ rest of the BFR community.
 
 Welcome aboard!
 
-Tutorial
---------
+Getting Started
+---------------
 
-This tutorial is a step-by-step walk through of the library describing the
-essential components of a BFR application and how the pieces fit together.
+This section is a walk through of the process of building and installing the application, 
+downloading the sample code and communicating with a test device.
 
-Samples
--------
+.. toctree::
+    :maxdepth: 2
 
-The library has a variety of sample applications, some of them are a framework
-for building larger applications.
+    gettingstarted/organization.rst
+    gettingstarted/configuration.rst
+    gettingstarted/testing.rst
+    gettingstarted/deployment.rst
 
-Modules
--------
+Configuration
+-------------
+
+This section is a walk through of the process of building and installing the application, 
+downloading the sample code and communicating with a test device.
+
+.. toctree::
+    :maxdepth: 2
+
+    configuration/elements.rst
+    configuration/debug.rst
+    configuration/network.rst
+    configuration/ip.rst
+    configuration/vlan.rst
+    configuration/router.rst
+    configuration/filter.rst
+    configuration/mlan.rst
+
+Developers
+----------
 
 This documentation is intended for BFR developers.
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
-    modules/index.rst
+    developers/index.rst
+
+Missing Features
+----------------
+
+* Missing link layer; ARCNET - Most enterprise networks are composed of a collection of Ethernet and/or IP LAN's. 
+  so the focus of the project has been on those two technologies. There are relatively few ARCNET cards with Linux drivers,
+  so ARCNET support has been a low priority
+
+* Missing link layer; MS/TP - almost all PC's come with a serial port, but it is very difficult to manage the 
+  timing issues with MS/TP communications with many operating systems.  The floppy-boot Linux environment, particularly 
+  where the BFR is the only application running, should have no problems keeping track of the necessary timers.
+
+* Missing link layer; PTP - Enterprise networks are typically static, with dial-up connections becoming less 
+  popular as full-time, high speed connections become available.  PTP does not have the same timing requirements 
+  that are involved in MS/TP networks and the PTP protocol is relatively simple, so adding support for PTP should 
+  not be difficult.
+
+* Half-routers - Similar to PTP support, there are standard procedures for processing I-Could-Be-Router-To-Network,
+  Establish-Connection-To-Network, and other similar network layer messages that are appropriate for networks that are 
+  not "always on", the BFR application does not currently follow these procedures.
 
 Glossary
 --------

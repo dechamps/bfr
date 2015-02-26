@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'BFR'
-copyright = u'2011, Joel Bender'
+copyright = u'2015, Joel Bender'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -222,7 +222,7 @@ man_pages = [
 epub_title = u'BFR'
 epub_author = u'Joel Bender'
 epub_publisher = u'Joel Bender'
-epub_copyright = u'2011, Joel Bender'
+epub_copyright = u'2015, Joel Bender'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
