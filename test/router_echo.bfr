@@ -1,0 +1,55 @@
+<BFR>
+    Create a network with three nodes:
+
+    <VLAN>
+        <Node address="1" server="a" promiscuous="y" />
+        <Node address="2" server="b" />
+        <Node address="3" server="c" />
+    </VLAN>
+
+    On the first node, bind a debugger:
+
+    <Debug client="a" prefix="a" />
+
+    On the second node, bind a console:
+
+    <Debug client="b" server="bd" prefix="b" />
+    <Router client="bd" server="ba" />
+    <Console client="ba" />
+
+    On the third node, bind a debugger, which will show the
+    traffic going to the router from this network:
+
+    <Debug client="c" server="cr" prefix="c" />
+
+    Create a second network with three nodes:
+
+    <VLAN>
+        <Node address="1" server="x" promiscuous="y" />
+        <Node address="2" server="y" />
+        <Node address="3" server="z" />
+    </VLAN>
+
+    On the first node, bind a debugger:
+
+    <Debug client="x" prefix="x" />
+
+    On the second node, bind an echo:
+
+    <Debug client="y" server="yd" prefix="y" />
+    <Router client="yd" server="ya" />
+    <Echo client="ya" />
+
+    On the third node, bind a debugger, which will show the
+    traffic going to the router from this network:
+
+    <Debug client="z" server="zr" prefix="z" />
+
+    Now create a router between the two networks:
+
+    <Router>
+        <Adapter client="cr" net="1" />
+        <Adapter client="zr" net="2" />
+    </Router>
+</BFR>
+

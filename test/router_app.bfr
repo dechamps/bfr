@@ -1,0 +1,22 @@
+<BFR>
+    Create a network with three nodes:
+
+    <VLAN>
+        <Node address="1" server="a" promiscuous="y" />
+        <Node address="2" server="b" />
+        <Node address="3" server="c" />
+    </VLAN>
+
+    On the first node, bind a debugger:
+
+    <Debug client="a" prefix="a" />
+
+    On the second node, bind a router and a console:
+
+    <Router client="b" server="ba" />
+    <Console client="ba" />
+
+    <Debug client="c" server="cd" prefix="c" />
+    <Echo client="cd" />
+</BFR>
+
