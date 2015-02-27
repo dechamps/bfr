@@ -1,0 +1,8 @@
+<BFR>
+    <UDP address="$BFR_ETH0_IP" server="x1" />
+    <Debug   client="x1"  server="x2" prefix="[0] " />
+    <BIP     client="x2"  server="x3" />
+    <Router  client="x3"  server="x4" />
+    <Console client="x4" />
+</BFR>
+
