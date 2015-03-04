@@ -56,7 +56,7 @@ user.  In this case the ``Debug`` element will not send any packets upstream.
 Here the user has given this sample configuration to the BFR application, then requested that a packet 
 of four octets be sent to a broadcast address, which is then printed by the ``Debug`` element::
 
-    $ ../BFR/BFR sample.bfr
+    $ bfr sample.bfr
     * 01020304
     * <- null : 01.02.03.04.
 
@@ -77,7 +77,7 @@ Now packets that are "sent" by the ``Console`` go upstream rather than downstrea
 to provide sample packets into the BFR stack as if they have been received by some other component.  In
 this case the debugging shows the packet going upstream::
 
-    $ ../BFR/BFR sample.bfr
+    $ bfr sample.bfr
     * 01020304
     * -> null : 01.02.03.04.
 

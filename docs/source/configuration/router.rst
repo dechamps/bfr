@@ -92,7 +92,7 @@ the component doing any routing::
 
 Here is an example::
 
-    $ ../BFR/BFR router_app.bfr
+    $ bfr router_app.bfr
     * DEADBEEF
     c 2 -> * : 01.00.DE.AD.BE.EF.
     c 2 <- null : 01.00.DE.AD.BE.EF.
@@ -111,7 +111,7 @@ The following sample shows the user using the ``*:*`` application layer destinat
 address for generating global broadcast messsage.  Notice that the NPCI contains the 
 DNET/DLEN/DADR fields appropriate for a global broadcast::
 
-    $ ../BFR/BFR router_app.bfr
+    $ bfr router_app.bfr
     *:* DEADBEEF
     c 2 -> * : 01.20.FF.FF.00.FF.DE.AD.BE.EF.
     c 2 <- null : 01.20.FF.FF.00.FF.DE.AD.BE.EF.
@@ -186,11 +186,7 @@ This sample configuration file creates a virtual network with three nodes::
         </Router>
     </BFR>
 
-This is an explination.
-
 .. highlight:: text
-
-This is a sample running the application::
 
 When the application first starts, the router has a special task to broadcast 
 an I-Am-Router-To-Network message on all of its connected networks.  There are two 
@@ -198,7 +194,7 @@ sets of messages, the first is on network ``1`` saying that ``c`` is the router
 to network ``2``, the second is on network ``2`` saying that ``z`` is the router 
 to network ``1``::
 
-    $ ../BFR/BFR router_echo.bfr 
+    $ bfr router_echo.bfr 
     c * <- null : 01.80.01.00.02.
     b 3 -> * : 01.80.01.00.02.
     a 3 -> * : 01.80.01.00.02.

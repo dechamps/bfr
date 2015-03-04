@@ -42,7 +42,7 @@ Because of the wide variety of platforms and compilers, the project does not cur
 pre-built version of the BFR executable.  The build shell scripts assume that the developer is 
 going to be using GNU C++ compiler and a debugger such as gdb::
 
-    $ cd BFR/
+    $ cd bfr/
     $ ./build.sh
 
 For a debug version, the script simply instructs the compiler to turn on debugging and sets the 
@@ -65,7 +65,7 @@ Running the BFR
 
 Running the application from a shell window will print out usage information::
 
-    $ ./BFR
+    $ bfr
     Usage: BFR [-h] [-v] [-d] file [ parm... ]\n" );
 
         -h      help
@@ -77,7 +77,7 @@ The application can take advantage of environment variables passed in from the s
 the configuration file.  Getting the variables set correctly can sometimes be difficult, running with 
 the -d flag will print those out::
 
-    $ ./BFR -d
+    $ bfr -d
     argv[0] = "./BFR"
     argv[1] = "-d"
     envp[0] = "XDG_VTNR=7"

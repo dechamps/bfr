@@ -105,10 +105,10 @@ variable to get the address::
 The BFR can now be executed like this::
 
     $ export BFR_ETH0_ADDRESS=192.168.1.1/24
-    $ ./BFR config.bfr
+    $ bfr config.bfr
 
 Or by setting the value on the same script line::
 
-    $ BFR_ETH0_ADDRESS=192.168.1.1/24 ./BFR config.bfr
+    $ BFR_ETH0_ADDRESS=192.168.1.1/24 bfr config.bfr
 
 
