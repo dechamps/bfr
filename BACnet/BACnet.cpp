@@ -443,7 +443,7 @@ void BACnetAddress::Station( const char *spec )
 void BACnetAddress::Pack( unsigned long host, unsigned short port )
 {
 	addrType = localStationAddr;
-	addrLen = sizeof(unsigned long) + sizeof(unsigned short);
+	addrLen = 4 + sizeof(unsigned short);
 	Pack( addrAddr, host, port );
 }
 
