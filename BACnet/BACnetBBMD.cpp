@@ -16,19 +16,6 @@
 //  BACnetBBMD::BACnetBBMD
 //
 
-BACnetBBMD::BACnetBBMD( void )
-    : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
-    , bbmdAddress(), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)
-{
-#if _DEBUG_BBMD
-    printf("BACnetBBMD::BACnetBBMD\n");
-#endif
-}
-
-//
-//  BACnetBBMD::BACnetBBMD
-//
-
 BACnetBBMD::BACnetBBMD( unsigned long host, unsigned short port )
     : BACnetTask( recurringTask, 1000 ), bbmdFDSupport(false)
     , bbmdAddress(host, port), bbmdLocalIndex(-1), bbmdBDTSize(0), bbmdFDTSize(0)

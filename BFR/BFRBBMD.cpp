@@ -71,7 +71,13 @@ BACnetBBMDFactory::~BACnetBBMDFactory( void )
 
 voidPtr BACnetBBMDFactory::StartElement( const char *name, const MinML::AttributeList& attrs )
 {
-    BACnetBBMDPtr   bbmdp = new BACnetBBMD()
+    // The address that we will include in the "originating device" field of Forwarded-NPDU messages.
+    // Should be set to an address by which the BBMD can be reached, i.e. its local address, or perhaps a different address if NAT is used.
+    const char *bbmd_address = SubstituteArgs(attrs["address"]);
+    if (!bbmd_address || !*bbmd_address)
+        throw_1(12001);     // address required
+
+    BACnetBBMDPtr   bbmdp = new BACnetBBMD(BACnetAddress(bbmd_address))
     ;
 
     // find out if foreign device registration should be allowed

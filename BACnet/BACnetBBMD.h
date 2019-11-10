@@ -62,7 +62,6 @@ class BACnetBBMD : public BACnetClient, public BACnetServer, public BACnetTask {
     public:
         bool            bbmdFDSupport;
 
-        BACnetBBMD( void );
         BACnetBBMD( unsigned long host, unsigned short port = kBACnetIPDefaultPort );
         BACnetBBMD( const BACnetAddress &addr );
         virtual ~BACnetBBMD( void );
