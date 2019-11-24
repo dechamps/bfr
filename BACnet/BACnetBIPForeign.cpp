@@ -66,8 +66,9 @@ void BACnetBIPForeign::Register( void )
     // we're dead until a response comes back
     foreignStatus = 0;
 
-    // while we're alive, send registration requests at this interval
-    taskInterval = foreignTimeToLive * 1000;
+    // while we're alive, send registration requests four times per TTL
+    // (this ensures we don't lose the registration just because of a few dropped packets)
+    taskInterval = foreignTimeToLive * 1000 / 4;
     InstallTask();
 
     // send off one right now while we're at it
