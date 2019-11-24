@@ -204,7 +204,7 @@ voidPtr BFRRouterFactory::StartElement( const char *name, const MinML::Attribute
 
     // if there is no direct client, there will probably be more than one adapter
     if (!cname)
-        new BACnetRouterBroadcastRoutingTablesTask( rp );
+        new BACnetRouterBroadcastRoutingTablesTask( rp, 30000 );
 
     // check for dynamic routing, turned off by default
     s = SubstituteArgs(attrs["dynamic"]);

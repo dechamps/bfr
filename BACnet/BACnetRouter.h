@@ -104,8 +104,10 @@ class BACnetRouterBroadcastRoutingTablesTask : public BACnetTask {
     public:
         BACnetRouterPtr     taskRouter;
 
-        BACnetRouterBroadcastRoutingTablesTask( BACnetRouterPtr rp, int delay = 0 )
-            : taskRouter(rp), BACnetTask( oneShotDeleteTask, delay )
+        // We set up a recurring task to broadcast the table from time to time.
+	// This makes sure we eventually recover if this message gets lost.
+        BACnetRouterBroadcastRoutingTablesTask( BACnetRouterPtr rp, int delay )
+            : taskRouter(rp), BACnetTask( recurringTask, delay )
         {
             InstallTask();
         }
